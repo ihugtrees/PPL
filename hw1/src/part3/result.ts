@@ -1,16 +1,36 @@
 /* Question 3 */
 
-export type Result<T> = undefined;
+import { makeSome } from "./optional";
 
-export const makeOk = undefined;
-export const makeFailure = undefined;
+export type Result<T> = Ok<T> | Failure;
 
-export const isOk = undefined;
-export const isFailure = undefined;
+export const makeOk = <T>(value1 : T) : Ok<T> => ({tag : "Ok" , value : value1});
+export const makeFailure = <T>(message1 : string) : Failure => ({tag : "Failure" , massage : message1});
+
+export const isOk = <T>(bob : Result<T>) : bob is Ok<T> => bob.tag==="Ok" ;
+
+
+export const isFailure = <T>(bob : Result<T>) : bob is Failure => bob.tag==="Failure" ;
+    
+
+interface Ok<T> {
+    tag : "Ok";
+    value : T;
+}
+
+interface Failure {
+    tag : "Failure";
+    massage : string ; 
+}
 
 /* Question 4 */
-export const bind = undefined;
+export const bind  =  <T, U>(res : Result<T>, f: (x: T) => Result<U>): Result<U> => { 
+    return isOk(res) ? f(res.value) : makeFailure (res.massage);
+}
 
+interface deleteMe {
+    deleteThis : number;
+}
 /* Question 5 */
 interface User {
     name: string;
