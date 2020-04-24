@@ -5,7 +5,7 @@ import { makeSome } from "./optional";
 export type Result<T> = Ok<T> | Failure;
 
 const makeOk = <T>(value1: T): Ok<T> => ({ tag: "Ok", value: value1 });
-const makeFailure = <T>(message1: string): Failure => ({ tag: "Failure", massage: message1 });
+const makeFailure = <T>(message1: string): Failure => ({ tag: "Failure", message: message1 });
 
 export const isOk = <T>(bob: Result<T>): bob is Ok<T> => bob.tag === "Ok";
 
@@ -20,12 +20,12 @@ interface Ok<T> {
 
 interface Failure {
     tag: "Failure";
-    massage: string;
+    message: string;
 }
 
 /* Question 4 */
 export const bind = <T, U>(res: Result<T>, f: (x: T) => Result<U>): Result<U> => {
-    return isOk(res) ? f(res.value) : makeFailure(res.massage);
+    return isOk(res) ? f(res.value) : makeFailure(res.message);
 }
 
 
