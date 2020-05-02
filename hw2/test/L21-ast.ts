@@ -54,7 +54,7 @@ export interface AppExp { tag: "AppExp", rator: CExp, rands: CExp[]; }
 export interface IfExp { tag: "IfExp"; test: CExp; then: CExp; alt: CExp; };
 export interface ProcExp { tag: "ProcExp"; args: VarDecl[], body: CExp[]; };
 // L21
-export interface ForExp { tag: "ForExp"; loop: VarDecl; start: CExp; end: CExp; body: CExp };
+export interface ForExp { tag: "ForExp"; var: VarDecl; start: NumExp; end: NumExp; body: CExp };
 
 // Type value constructors for disjoint types
 export const makeProgram = (exps: Exp[]): Program => ({ tag: "Program", exps: exps });
@@ -73,8 +73,8 @@ export const makeIfExp = (test: CExp, then: CExp, alt: CExp): IfExp =>
 export const makeProcExp = (args: VarDecl[], body: CExp[]): ProcExp =>
     ({ tag: "ProcExp", args: args, body: body });
 // L21
-export const makeForExp = (loop: VarDecl, start: AtomicExp, end: AtomicExp, body: CExp): ForExp =>
-    ({ tag: "ForExp", loop: loop, start: start, end: end, body: body });
+export const makeForExp = (loop: VarDecl, start: NumExp, end: NumExp, body: CExp): ForExp =>
+    ({ tag: "ForExp", var: loop, start: start, end: end, body: body });
 
 
 // Type predicates for disjoint types
@@ -206,9 +206,12 @@ const parseProcExp = (vars: Sexp, body: Sexp[]): Result<ProcExp> =>
             (cexps: CExp[]) => makeOk(makeProcExp(map(makeVarDecl, vars), cexps))) :
         makeFailure("Invalid vars for ProcExp");
 
-// <IfExp> -> (if <CExp> <CExp> <CExp>)
-const parseForExp = (variable: Sexp, params: Sexp[]): Result<ForExp> =>
-    !isIdentifier(variable) ? makeFailure("First arg of for must be an identifier") :
+// <ForExp> -> (for <VarDecl> <NumExp> <NumExp> <CExp>)
+const parseForExp = (loop: Sexp, params: Sexp[]): Result<ForExp> =>
+    !isIdentifier(loop) ? makeFailure("First arg of for must be an identifier") :
         params.length !== 3 ? makeFailure("Expression not of the form (for <vardecl> <numexp> <numexp> <cexp>)") :
-            bind(mapResult(parseL21CExp, params),
-                (cexps: CExp[]) => makeOk(makeForExp(makeVarDecl(variable), cexps[0], cexps[1], cexps[2])));
+            !isToken(params[0]) || !isString(params[0]) || !isNumericString(params[0])
+                || !isToken(params[1]) || !isString(params[1]) || !isNumericString(params[1]) ? makeFailure("first and second parameter must be number") :
+                isEmpty(params[2]) ? makeFailure("body can't be empty") :
+                    bind(mapResult(parseL21CExp, params),
+                        (cexps: CExp[]) => makeOk(makeForExp(makeVarDecl(loop), makeNumExp(+cexps[0]), makeNumExp(+cexps[1]), cexps[2])));                  
