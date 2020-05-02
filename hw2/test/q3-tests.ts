@@ -20,7 +20,11 @@ describe('Q3 Tests', () => {
     it('fails when there is more than one body expression', () => {
         expect(L21toL2Result(`(for i 1 2 (+ i i) (* i i))`)).to.satisfy(isFailure);
     });
-    
+
+    it('fails when x larger than y', () => {
+        expect(bind(bind(bind(p(`(for i 4 3 (* i i))`), parseL21Exp), L21ToL2), unparseL21)).to.satisfy(isFailure);
+    });
+
     it('test 1', () => {
         expect(bind(bind(bind(p(`(for i 1 3 (* i i))`), parseL21Exp), L21ToL2), unparseL21)).to.deep.equal(makeOk(`((lambda () ((lambda (i) (* i i)) 1) ((lambda (i) (* i i)) 2) ((lambda (i) (* i i)) 3)) )`));
     });
@@ -29,4 +33,3 @@ describe('Q3 Tests', () => {
         expect(bind(bind(parseL21(`(L21 ((lambda (x) (* x x)) (+ 5 4)) (if (> y 6) 8 (for i 1 3 (* i i))))`), L21ToL2), unparseL21)).to.deep.equal(makeOk(`(L21 ((lambda (x) (* x x)) (+ 5 4)) (if (> y 6) 8 ((lambda () ((lambda (i) (* i i)) 1) ((lambda (i) (* i i)) 2) ((lambda (i) (* i i)) 3)) )))`));
     });
 });
-

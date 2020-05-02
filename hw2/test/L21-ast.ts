@@ -41,40 +41,90 @@ export type CExp = AtomicExp | CompoundExp;
 export type AtomicExp = NumExp | BoolExp | PrimOp | VarRef;
 export type CompoundExp = AppExp | IfExp | ProcExp | ForExp;
 
-export interface Program { tag: "Program"; exps: Exp[]; }
+export interface Program {
+	tag: "Program";
+	exps: Exp[];
+}
 
-export interface DefineExp { tag: "DefineExp"; var: VarDecl; val: CExp; }
-export interface NumExp { tag: "NumExp"; val: number; }
-export interface BoolExp { tag: "BoolExp"; val: boolean; }
-export interface PrimOp { tag: "PrimOp", op: string; }
-export interface VarRef { tag: "VarRef", var: string; }
-export interface VarDecl { tag: "VarDecl", var: string; }
-export interface AppExp { tag: "AppExp", rator: CExp, rands: CExp[]; }
+export interface DefineExp {
+	tag: "DefineExp";
+	var: VarDecl;
+	val: CExp;
+}
+
+export interface NumExp {
+	tag: "NumExp";
+	val: number;
+}
+
+export interface BoolExp {
+	tag: "BoolExp";
+	val: boolean;
+}
+
+export interface PrimOp {
+	tag: "PrimOp",
+	op: string;
+}
+
+export interface VarRef {
+	tag: "VarRef",
+	var: string;
+}
+
+export interface VarDecl {
+	tag: "VarDecl",
+	var: string;
+}
+
+export interface AppExp {
+	tag: "AppExp",
+	rator: CExp,
+	rands: CExp[];
+}
+
 // L2
-export interface IfExp { tag: "IfExp"; test: CExp; then: CExp; alt: CExp; };
-export interface ProcExp { tag: "ProcExp"; args: VarDecl[], body: CExp[]; };
+export interface IfExp {
+	tag: "IfExp";
+	test: CExp;
+	then: CExp;
+	alt: CExp;
+};
+
+export interface ProcExp {
+	tag: "ProcExp";
+	args: VarDecl[],
+	body: CExp[];
+};
+
 // L21
-export interface ForExp { tag: "ForExp"; var: VarDecl; start: NumExp; end: NumExp; body: CExp };
+export interface ForExp {
+	tag: "ForExp";
+	var: VarDecl;
+	start: NumExp;
+	end: NumExp;
+	body: CExp
+};
 
 // Type value constructors for disjoint types
 export const makeProgram = (exps: Exp[]): Program => ({ tag: "Program", exps: exps });
 export const makeDefineExp = (v: VarDecl, val: CExp): DefineExp =>
-    ({ tag: "DefineExp", var: v, val: val });
+	({ tag: "DefineExp", var: v, val: val });
 export const makeNumExp = (n: number): NumExp => ({ tag: "NumExp", val: n });
 export const makeBoolExp = (b: boolean): BoolExp => ({ tag: "BoolExp", val: b });
 export const makePrimOp = (op: string): PrimOp => ({ tag: "PrimOp", op: op });
 export const makeVarRef = (v: string): VarRef => ({ tag: "VarRef", var: v });
 export const makeVarDecl = (v: string): VarDecl => ({ tag: "VarDecl", var: v });
 export const makeAppExp = (rator: CExp, rands: CExp[]): AppExp =>
-    ({ tag: "AppExp", rator: rator, rands: rands });
+	({ tag: "AppExp", rator: rator, rands: rands });
 // L2
 export const makeIfExp = (test: CExp, then: CExp, alt: CExp): IfExp =>
-    ({ tag: "IfExp", test: test, then: then, alt: alt });
+	({ tag: "IfExp", test: test, then: then, alt: alt });
 export const makeProcExp = (args: VarDecl[], body: CExp[]): ProcExp =>
-    ({ tag: "ProcExp", args: args, body: body });
+	({ tag: "ProcExp", args: args, body: body });
 // L21
 export const makeForExp = (loop: VarDecl, start: NumExp, end: NumExp, body: CExp): ForExp =>
-    ({ tag: "ForExp", var: loop, start: start, end: end, body: body });
+	({ tag: "ForExp", var: loop, start: start, end: end, body: body });
 
 
 // Type predicates for disjoint types
@@ -96,12 +146,12 @@ export const isForExp = (x: any): x is ForExp => x.tag === "ForExp";
 // Type predicates for type unions
 export const isExp = (x: any): x is Exp => isDefineExp(x) || isCExp(x);
 export const isAtomicExp = (x: any): x is AtomicExp =>
-    isNumExp(x) || isBoolExp(x) ||
-    isPrimOp(x) || isVarRef(x);
+	isNumExp(x) || isBoolExp(x) ||
+	isPrimOp(x) || isVarRef(x);
 export const isCompoundExp = (x: any): x is CompoundExp =>
-    isAppExp(x) || isIfExp(x) || isProcExp(x) || isForExp(x);
+	isAppExp(x) || isIfExp(x) || isProcExp(x) || isForExp(x);
 export const isCExp = (x: any): x is CExp =>
-    isAtomicExp(x) || isCompoundExp(x);
+	isAtomicExp(x) || isCompoundExp(x);
 
 // ========================================================
 // Parsing
@@ -112,7 +162,7 @@ import { parse as parseSexp, isToken } from "../imp/parser";
 
 // combine Sexp parsing with the L2 parsing
 export const parseL21 = (x: string): Result<Program> =>
-    bind(parseSexp(x), parseL21Program);
+	bind(parseSexp(x), parseL21Program);
 
 // L2 concrete syntax
 // <Program> -> (L2 <Exp>+)
@@ -127,91 +177,91 @@ export const parseL21 = (x: string): Result<Program> =>
 
 // <Program> -> (L2 <Exp>+)
 export const parseL21Program = (sexp: Sexp): Result<Program> =>
-    sexp === "" || isEmpty(sexp) ? makeFailure("Unexpected empty program") :
-        isToken(sexp) ? makeFailure("Program cannot be a single token") :
-            isArray(sexp) ? parseL21GoodProgram(first(sexp), rest(sexp)) :
-                makeFailure("Unexpected type " + sexp);
+	sexp === "" || isEmpty(sexp) ? makeFailure("Unexpected empty program") :
+		isToken(sexp) ? makeFailure("Program cannot be a single token") :
+			isArray(sexp) ? parseL21GoodProgram(first(sexp), rest(sexp)) :
+				makeFailure("Unexpected type " + sexp);
 
 const parseL21GoodProgram = (keyword: Sexp, body: Sexp[]): Result<Program> =>
-    keyword === "L21" && !isEmpty(body) ? bind(mapResult(parseL21Exp, body),
-        (exps: Exp[]) => makeOk(makeProgram(exps))) :
-        makeFailure("Program must be of the form (L21 <exp>+)");
+	keyword === "L21" && !isEmpty(body) ? bind(mapResult(parseL21Exp, body),
+		(exps: Exp[]) => makeOk(makeProgram(exps))) :
+		makeFailure("Program must be of the form (L21 <exp>+)");
 
 // <Exp> -> <DefineExp> | <CExp>
 export const parseL21Exp = (sexp: Sexp): Result<Exp> =>
-    isEmpty(sexp) ? makeFailure("Exp cannot be an empty list") :
-        isArray(sexp) ? parseL21CompoundExp(first(sexp), rest(sexp)) :
-            isToken(sexp) ? parseL21Atomic(sexp) :
-                makeFailure("Unexpected type " + sexp);
+	isEmpty(sexp) ? makeFailure("Exp cannot be an empty list") :
+		isArray(sexp) ? parseL21CompoundExp(first(sexp), rest(sexp)) :
+			isToken(sexp) ? parseL21Atomic(sexp) :
+				makeFailure("Unexpected type " + sexp);
 
 // <CompoundExp> -> <DefineExp> | <CompoundCExp>
 export const parseL21CompoundExp = (op: Sexp, params: Sexp[]): Result<Exp> =>
-    op === "define" ? parseDefine(params) :
-        parseL21CompoundCExp(op, params);
+	op === "define" ? parseDefine(params) :
+		parseL21CompoundCExp(op, params);
 
 // <CompoundCExp> -> <AppExp> | <IfExp> | <ProcExp>
 export const parseL21CompoundCExp = (op: Sexp, params: Sexp[]): Result<CExp> =>
-    op === "if" ? parseIfExp(params) :
-        op === "lambda" ? parseProcExp(first(params), rest(params)) :
-            op === "for" ? parseForExp(first(params), rest(params)) :
-                parseAppExp(op, params);
+	op === "if" ? parseIfExp(params) :
+		op === "lambda" ? parseProcExp(first(params), rest(params)) :
+			op === "for" ? parseForExp(first(params), rest(params)) :
+				parseAppExp(op, params);
 
 // <DefineExp> -> (define <VarDecl> <CExp>)
 export const parseDefine = (params: Sexp[]): Result<DefineExp> =>
-    isEmpty(params) ? makeFailure("define missing 2 arguments") :
-        isEmpty(rest(params)) ? makeFailure("define missing 1 arguments") :
-            !isEmpty(rest(rest(params))) ? makeFailure("define has too many arguments") :
-                parseGoodDefine(first(params), second(params));
+	isEmpty(params) ? makeFailure("define missing 2 arguments") :
+		isEmpty(rest(params)) ? makeFailure("define missing 1 arguments") :
+			!isEmpty(rest(rest(params))) ? makeFailure("define has too many arguments") :
+				parseGoodDefine(first(params), second(params));
 
 const parseGoodDefine = (variable: Sexp, val: Sexp): Result<DefineExp> =>
-    !isIdentifier(variable) ? makeFailure("First arg of define must be an identifier") :
-        bind(parseL21CExp(val),
-            (value: CExp) => makeOk(makeDefineExp(makeVarDecl(variable), value)));
+	!isIdentifier(variable) ? makeFailure("First arg of define must be an identifier") :
+		bind(parseL21CExp(val),
+			(value: CExp) => makeOk(makeDefineExp(makeVarDecl(variable), value)));
 
 // <CExp> -> <AtomicExp> | <CompondCExp>
 export const parseL21CExp = (sexp: Sexp): Result<CExp> =>
-    isEmpty(sexp) ? makeFailure("CExp cannot be an empty list") :
-        isArray(sexp) ? parseL21CompoundCExp(first(sexp), rest(sexp)) :
-            isToken(sexp) ? parseL21Atomic(sexp) :
-                makeFailure("Unexpected type " + sexp);
+	isEmpty(sexp) ? makeFailure("CExp cannot be an empty list") :
+		isArray(sexp) ? parseL21CompoundCExp(first(sexp), rest(sexp)) :
+			isToken(sexp) ? parseL21Atomic(sexp) :
+				makeFailure("Unexpected type " + sexp);
 
 // <Atomic> -> <number> | <boolean> | <PrimOp> | <VarRef>
 export const parseL21Atomic = (token: Token): Result<CExp> =>
-    token === "#t" ? makeOk(makeBoolExp(true)) :
-        token === "#f" ? makeOk(makeBoolExp(false)) :
-            isString(token) && isNumericString(token) ? makeOk(makeNumExp(+token)) :
-                isString(token) && isPrimitiveOp(token) ? makeOk(makePrimOp(token)) :
-                    isString(token) ? makeOk(makeVarRef(token)) :
-                        makeFailure("Invalid atomic token: " + token);
+	token === "#t" ? makeOk(makeBoolExp(true)) :
+		token === "#f" ? makeOk(makeBoolExp(false)) :
+			isString(token) && isNumericString(token) ? makeOk(makeNumExp(+token)) :
+				isString(token) && isPrimitiveOp(token) ? makeOk(makePrimOp(token)) :
+					isString(token) ? makeOk(makeVarRef(token)) :
+						makeFailure("Invalid atomic token: " + token);
 
 export const isPrimitiveOp = (x: string): boolean =>
-    ["+", "-", "*", "/", ">", "<", "=", "not", "and", "or",
-        "eq?", "number?", "boolean?"].includes(x);
+	["+", "-", "*", "/", ">", "<", "=", "not", "and", "or",
+		"eq?", "number?", "boolean?"].includes(x);
 
 // <AppExp> -> (<CExp>+)
 export const parseAppExp = (op: Sexp, params: Sexp[]): Result<CExp> =>
-    safe2((rator: CExp, rands: CExp[]) => makeOk(makeAppExp(rator, rands)))
-        (parseL21CExp(op), mapResult(parseL21CExp, params));
+	safe2((rator: CExp, rands: CExp[]) => makeOk(makeAppExp(rator, rands)))
+		(parseL21CExp(op), mapResult(parseL21CExp, params));
 
 // <IfExp> -> (if <CExp> <CExp> <CExp>)
 const parseIfExp = (params: Sexp[]): Result<IfExp> =>
-    params.length !== 3 ? makeFailure("Expression not of the form (if <cexp> <cexp> <cexp>)") :
-        bind(mapResult(parseL21CExp, params),
-            (cexps: CExp[]) => makeOk(makeIfExp(cexps[0], cexps[1], cexps[2])));
+	params.length !== 3 ? makeFailure("Expression not of the form (if <cexp> <cexp> <cexp>)") :
+		bind(mapResult(parseL21CExp, params),
+			(cexps: CExp[]) => makeOk(makeIfExp(cexps[0], cexps[1], cexps[2])));
 
 // <ProcExp> -> (lambda (<VarDecl>*) <CExp>+)
 const parseProcExp = (vars: Sexp, body: Sexp[]): Result<ProcExp> =>
-    isArray(vars) && allT(isIdentifier, vars) ?
-        bind(mapResult(parseL21CExp, body),
-            (cexps: CExp[]) => makeOk(makeProcExp(map(makeVarDecl, vars), cexps))) :
-        makeFailure("Invalid vars for ProcExp");
+	isArray(vars) && allT(isIdentifier, vars) ?
+		bind(mapResult(parseL21CExp, body),
+			(cexps: CExp[]) => makeOk(makeProcExp(map(makeVarDecl, vars), cexps))) :
+		makeFailure("Invalid vars for ProcExp");
 
 // <ForExp> -> (for <VarDecl> <NumExp> <NumExp> <CExp>)
 const parseForExp = (loop: Sexp, params: Sexp[]): Result<ForExp> =>
-    !isIdentifier(loop) ? makeFailure("First arg of for must be an identifier") :
-        params.length !== 3 ? makeFailure("Expression not of the form (for <vardecl> <numexp> <numexp> <cexp>)") :
-            !isToken(params[0]) || !isString(params[0]) || !isNumericString(params[0])
-                || !isToken(params[1]) || !isString(params[1]) || !isNumericString(params[1]) ? makeFailure("first and second parameter must be number") :
-                isEmpty(params[2]) ? makeFailure("body can't be empty") :
-                    bind(mapResult(parseL21CExp, params),
-                        (cexps: CExp[]) => makeOk(makeForExp(makeVarDecl(loop), makeNumExp(+cexps[0]), makeNumExp(+cexps[1]), cexps[2])));                  
+	!isIdentifier(loop) ? makeFailure("First arg of for must be an identifier") :
+		params.length !== 3 ? makeFailure("Expression not of the form (for <vardecl> <numexp> <numexp> <cexp>)") :
+			!isString(params[0]) || !isNumericString(params[0])
+				|| !isString(params[1]) || !isNumericString(params[1]) ? makeFailure("first and second parameter must be number") :
+				isEmpty(params[2]) ? makeFailure("body can't be empty") :
+					bind(mapResult(parseL21CExp, params),
+						(cexps: CExp[]) => makeOk(makeForExp(makeVarDecl(loop), cexps[0] as NumExp, cexps[1] as NumExp, cexps[2])))

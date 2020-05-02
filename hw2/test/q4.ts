@@ -6,5 +6,5 @@ Purpose: @TODO
 Signature: @TODO
 Type: @TODO
 */
-export const l2ToJS = (exp: Exp | Program): Result<string> => 
+export const l2ToJS = (exp: Exp | Program): Result<string> =>
     @TODO

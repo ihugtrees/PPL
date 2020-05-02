@@ -2,7 +2,6 @@ import { ForExp, AppExp, Exp, Program, NumExp, CExp, makeForExp } from "./L21-as
 import { Result, mapResult, makeFailure, makeOk, bind, safe2, safe3 } from "../imp/result";
 import { makeNumExp, makeProgram, makeAppExp, makeProcExp, makeDefineExp, makeIfExp } from "./L21-ast";
 import { isIfExp, isForExp, isProgram, isAppExp, isDefineExp, isAtomicExp, isProcExp, isCExp } from "./L21-ast";
-import { map } from 'ramda';
 
 /*
 Purpose: transform for exp to app exp
@@ -12,8 +11,8 @@ Type: AppExp
 export const for2app = (exp: ForExp): AppExp => {
 	let body: CExp[] = [];
 
-	for (let i: number = exp.start.val; i < exp.end.val; i++) {
-		body.concat(makeAppExp(makeProcExp([exp.var], [exp.body]), [makeNumExp(i)]))
+	for (let i: number = exp.start.val; i <= exp.end.val; i++) {
+		body = body.concat(makeAppExp(makeProcExp([exp.var], [exp.body]), [makeNumExp(i)]))
 	}
 
 	return makeAppExp(makeProcExp([], body), []);
@@ -44,9 +43,5 @@ export const L21ToL2CExp = (exp: CExp): Result<CExp> =>
 				(L21ToL2CExp(exp.rator), mapResult(L21ToL2CExp, exp.rands)) :
 				isIfExp(exp) ? safe3((test: CExp, then: CExp, alt: CExp) => makeOk(makeIfExp(test, then, alt)))
 					(L21ToL2CExp(exp.test), L21ToL2CExp(exp.then), L21ToL2CExp(exp.alt)) :
-					isForExp(exp) ? L21ToL2CExp(for2app(exp)) :
+					isForExp(exp) ? (exp.start.val <= exp.end.val ? L21ToL2CExp(for2app(exp)) : makeFailure("x must be smaller than y")) :
 						makeFailure("Some error")
-
-
-					//L21ToL2CExp(exp.body)
-					//isForExp(exp.body) ? bind(mapResult(L21ToL2CExp, exp.body), (cexp: CExp) => makeOk(makeForExp())) : makeOk(for2app(exp))
