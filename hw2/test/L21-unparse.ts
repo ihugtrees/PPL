@@ -8,7 +8,7 @@ export const unparseL21 = (exp: Exp | Program): Result<string> =>
     isNumExp(exp) ? makeOk(exp.val.toString()) :
     isVarRef(exp) ? makeOk(exp.var) :
     isPrimOp(exp) ? makeOk(exp.op) :
-    isDefineExp(exp) ? bind(unparseL21(exp.val), (val: string) => makeOk(`(define ${exp.var} ${val})`)) :
+    isDefineExp(exp) ? bind(unparseL21(exp.val), (val: string) => makeOk(`(define ${exp.var.var} ${val})`)) :
     isProcExp(exp) ? bind(mapResult(unparseL21, exp.body), (body: string[]) => makeOk(`(lambda (${map(v => v.var, exp.args).join(" ")}) ${body.join(" ")})`)) :
     isForExp(exp) ? safe3((start: string, end: string, body: string) => makeOk(`(for ${exp.var.var} ${start} ${end} ${body})`))
                     (unparseL21(exp.start), unparseL21(exp.end), unparseL21(exp.body)) :

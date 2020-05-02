@@ -8,8 +8,8 @@ export const unparseL2 = (exp: Exp | Program): Result<string> =>
     isNumExp(exp) ? makeOk(exp.val.toString()) :
     isVarRef(exp) ? makeOk(exp.var) :
     isPrimOp(exp) ? makeOk(exp.op) :
-    isDefineExp(exp) ? bind(unparseL2(exp.val), (val: string) => makeOk(`(define ${exp.var} ${val})`)) :
-    isProcExp(exp) ? bind(mapResult(unparseL2, exp.body), (body: string[]) => makeOk(`(lambda (${map(v => v.var, exp.args).join(" ")} ${body.join(" ")}))`)) :
+    isDefineExp(exp) ? bind(unparseL2(exp.val), (val: string) => makeOk(`(define ${exp.var.var} ${val})`)) :
+    isProcExp(exp) ? bind(mapResult(unparseL2, exp.body), (body: string[]) => makeOk(`(lambda (${map(v => v.var, exp.args).join(" ")}) ${body.join(" ")})`)) :
     isIfExp(exp) ? safe3((test: string, then: string, alt: string) => makeOk(`(if ${test} ${then} ${alt})`))
                     (unparseL2(exp.test), unparseL2(exp.then), unparseL2(exp.alt)) :
     isAppExp(exp) ? safe2((rator: string, rands: string[]) => makeOk(`(${rator} ${rands.join(" ")})`))
