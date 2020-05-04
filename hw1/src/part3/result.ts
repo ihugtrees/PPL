@@ -4,8 +4,8 @@ import { makeSome } from "./optional";
 
 export type Result<T> = Ok<T> | Failure;
 
-const makeOk = <T>(value1: T): Ok<T> => ({ tag: "Ok", value: value1 });
-const makeFailure = <T>(message1: string): Failure => ({ tag: "Failure", message: message1 });
+export const makeOk = <T>(value1: T): Ok<T> => ({ tag: "Ok", value: value1 });
+export const makeFailure = <T>(message1: string): Failure => ({ tag: "Failure", message: message1 });
 
 export const isOk = <T>(bob: Result<T>): bob is Ok<T> => bob.tag === "Ok";
 

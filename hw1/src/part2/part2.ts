@@ -7,8 +7,8 @@ export const partition = <T>(f: ((x: T) => boolean), array: T[]): T[][] => {
 }
 
 /* Question 2 */
-export const mapMat = <T>(f: ((x: T) => T), mat: T[][]): T[][] => {
-    let sol: T[][] = mat.map(map(f));
+export const mapMat = <T,U>(f: ((x: T) => U), mat: T[][]): U[][] => {
+    let sol: U[][] = mat.map(map(f));
     return sol;
 }
 
@@ -17,6 +17,7 @@ export const composeMany = <T>(funcs: ((x: T) => T)[]): (x: T) => T => {
     let composed = funcs.reduce((composedF: ((x: T) => T), currF: ((x: T) => T)): (x: T) => T => { return composedF = compose(composedF, currF) });
 
     return composed;
+    
 }
 
 /* Question 4 */
@@ -53,7 +54,7 @@ export const maxSpeed = (pokedex: Pokemon[]): Pokemon[] => {
 
 export const grassTypes = (pokedex: Pokemon[]): string[] => {
     let grassPokes: Pokemon[] = pokedex.filter((p: Pokemon): boolean => { return p.type.includes("Grass") })
-    return grassPokes.map((x: Pokemon): string => { return x.name.english })
+    return grassPokes.map((x: Pokemon): string => { return x.name.english }).sort()
 }
 
 export const uniqueTypes = (pokedex: Pokemon[]): string[] => {
