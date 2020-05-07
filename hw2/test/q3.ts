@@ -1,42 +1,40 @@
-import { ForExp, AppExp, Exp, Program, NumExp, CExp, makeForExp } from "./L21-ast";
+import { ForExp, AppExp, Exp, Program, CExp } from "./L21-ast";
 import { Result, mapResult, makeFailure, makeOk, bind, safe2, safe3 } from "../imp/result";
 import { makeNumExp, makeProgram, makeAppExp, makeProcExp, makeDefineExp, makeIfExp } from "./L21-ast";
-import { isIfExp, isForExp, isProgram, isAppExp, isDefineExp, isAtomicExp, isProcExp, isCExp } from "./L21-ast";
+import { isIfExp, isForExp, isProgram, isAppExp, isDefineExp, isAtomicExp, isProcExp } from "./L21-ast";
 
 /*
 Purpose: transform for exp to app exp
-Signature: exp: ForExp
-Type: AppExp
+Signature: for2app(forExp)
+Type: [ForExp -> AppExp]
 */
-export const for2app = (exp: ForExp): AppExp => {
+export const for2app = (forExp: ForExp): AppExp => {
 	let body: CExp[] = [];
 
-	for (let i: number = exp.start.val; i <= exp.end.val; i++) {
-		body = body.concat(makeAppExp(makeProcExp([exp.var], [exp.body]), [makeNumExp(i)]))
+	for (let i: number = forExp.start.val; i <= forExp.end.val; i++) {
+		body = body.concat(makeAppExp(makeProcExp([forExp.var], [forExp.body]), [makeNumExp(i)]))
 	}
 
 	return makeAppExp(makeProcExp([], body), []);
 }
 
 /*
-Purpose: @TODO
-Signature: @TODO
-Type: @TODO
+Purpose: transform l21 program to l2
+Signature: L21ToL2(exp)
+Type: [Exp | Program -> Result<Exp | Program>]
 */
-// recives ForExp, AppExp, Exp, Program, NumExp, makeAppExp, makeProcExp, CExp, ProcExp, isForExp, Exp
 export const L21ToL2 = (exp: Exp | Program): Result<Exp | Program> =>
 	isProgram(exp) ? L21ToL2Program(exp) : L21toL2Exp(exp)
 
-export const L21ToL2Program = (prog: Program): Result<Program> =>
+const L21ToL2Program = (prog: Program): Result<Program> =>
 	bind(mapResult(L21toL2Exp, prog.exps), (exps: Exp[]) => makeOk(makeProgram(exps)));
 
 
-export const L21toL2Exp = (exp: Exp): Result<Exp> =>
+const L21toL2Exp = (exp: Exp): Result<Exp> =>
 	isDefineExp(exp) ? bind(L21ToL2CExp(exp.val), (cexp: CExp) => makeOk(makeDefineExp(exp.var, cexp))) :
 		L21ToL2CExp(exp)
 
-// exp is CompoundExp = AppExp | IfExp | ProcExp | ForExp;
-export const L21ToL2CExp = (exp: CExp): Result<CExp> =>
+const L21ToL2CExp = (exp: CExp): Result<CExp> =>
 	isAtomicExp(exp) ? makeOk(exp) :
 		isProcExp(exp) ? bind(mapResult(L21ToL2CExp, exp.body), (cexp: CExp[]) => makeOk(makeProcExp(exp.args, cexp))) :
 			isAppExp(exp) ? safe2((rator: CExp, rands: CExp[]) => makeOk(makeAppExp(rator, rands)))

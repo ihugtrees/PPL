@@ -1,12 +1,11 @@
-import { Exp, Program, isDefineExp, isNumExp, isBoolExp, isPrimOp, isProgram, isVarRef, isAppExp, isIfExp, isProcExp, PrimOp, AppExp, IfExp, ProcExp, DefineExp, CExp } from '../imp/L2-ast';
+import { Exp, Program, isDefineExp, isNumExp, isBoolExp, isPrimOp, isProgram, isVarRef, isAppExp, isIfExp, isProcExp, PrimOp, AppExp, IfExp, ProcExp, DefineExp } from '../imp/L2-ast';
 import { Result, mapResult, makeOk, makeFailure, bind, safe3, safe2 } from '../imp/result';
-import { ok } from 'assert';
 import { map } from 'ramda';
 
 /*
-Purpose: @TODO
-Signature: @TODO
-Type: @TODO
+Purpose: transform l2 program/expression to compatible javascript code string
+Signature: l2ToJS(exp)
+Type: [Exp | Program -> Result<string>]
 */
 export const l2ToJS = (exp: Exp | Program): Result<string> =>
 	isProgram(exp) ? ProgramToJS(exp) : ExpToJS(exp)
@@ -35,16 +34,16 @@ const primOpToJS = (operator: PrimOp): Result<string> =>
 		operator.op === "not" ? "!" :
 			operator.op === "and" ? "&&" :
 				operator.op === "or" ? "||" :
-					operator.op === "eq?" ? "==" :
+					operator.op === "eq?" ? "===" :
 						operator.op)
 
-const merge3 = safe3((a: string, b: string, c: string) => makeOk(`(${a} ${b} ${c})`))
+//const merge3 = safe3((a: string, b: string, c: string) => makeOk(`(${a} ${b} ${c})`))
 const merge2 = safe2((a: string, b: string) => makeOk(`(${a}${b})`))
 const isFuncOp = (op: PrimOp): boolean => !["+", "-", "*", "/", ">", "<", "=", "not", "and", "or", "eq?"].includes(op.op)
 
 //  "number?", "boolean?
 const makeBoolOrNum = (app: AppExp): Result<string> =>
-	bind(l2ToJS(app.rands[0]), (rand: string) => makeOk((app.rator as PrimOp).op === "boolean?" ? `(typeof ${rand} === boolean)` : `(typeof ${rand} === number)`))
+	bind(l2ToJS(app.rands[0]), (rand: string) => makeOk((app.rator as PrimOp).op === "boolean?" ? `(typeof ${rand} === 'boolean')` : `(typeof ${rand} === 'number')`))
 
 const appToJS = (app: AppExp): Result<string> =>
 	isPrimOp(app.rator) ? (app.rands.length === 1 ? (!isFuncOp(app.rator) ? merge2(l2ToJS(app.rator), l2ToJS(app.rands[0])) : makeBoolOrNum(app)) :
@@ -67,7 +66,8 @@ const ifToJS = (myif: IfExp): Result<string> =>
 
 const procToJS = (proc: ProcExp): Result<string> =>
 	proc.body.length === 1 ? bind(mapResult(l2ToJS, proc.body), (body: string[]) => makeOk(`((${map(v => v.var, proc.args).join(",")}) => ${body})`)) :
-		bind(mapResult(l2ToJS, proc.body), (body: string[]) => { body[body.length - 1] = "return " + body[body.length - 1] + ";"; return makeOk(`((${map(v => v.var, proc.args).join(",")}) => {${body.join("; ")}})`) })
+		proc.body.length > 1 ? bind(mapResult(l2ToJS, proc.body), (body: string[]) => { body[body.length - 1] = "return " + body[body.length - 1] + ";"; return makeOk(`((${map(v => v.var, proc.args).join(",")}) => {${body.join("; ")}})`) }) :
+			makeFailure("Lambda body cant be empty")
 
 const defineToJS = (def: DefineExp): Result<string> =>
 	bind(l2ToJS(def.val), (val: string) => makeOk(`const ${def.var.var} = ${val}`))
