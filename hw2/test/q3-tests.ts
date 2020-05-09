@@ -104,7 +104,7 @@ describe('Q3 Tests', () => {
     it('fails when range is invalid', () => {
         expect(bind(bind(bind(p(`(for i 5 3 (* i i))`), parseL21Exp), L21ToL2), unparseL21)).to.satisfy(isFailure);
     });
-    
+
     it('test 1', () => {
         expect(bind(bind(bind(p(`(for i 1 3 (* i i))`), parseL21Exp), L21ToL2), unparseL21)).to.deep.equal(makeOk(`((lambda () ((lambda (i) (* i i)) 1) ((lambda (i) (* i i)) 2) ((lambda (i) (* i i)) 3)) )`));
     });
@@ -130,5 +130,20 @@ describe('Q3 Tests', () => {
     });
     it('test 8', () => {
         expect(bind(bind(parseL21(`(L21 ((lambda (x) (for i 2 4 (* x i))) (+ 5 4)) (if (> y 6) 8 (for i 1 3 (for i 1 3 (* i i)))))`), L21ToL2), unparseL21)).to.deep.equal(makeOk(`(L21 ((lambda (x) ((lambda () ((lambda (i) (* x i)) 2) ((lambda (i) (* x i)) 3) ((lambda (i) (* x i)) 4)) )) (+ 5 4)) (if (> y 6) 8 ((lambda () ((lambda (i) ((lambda () ((lambda (i) (* i i)) 1) ((lambda (i) (* i i)) 2) ((lambda (i) (* i i)) 3)) )) 1) ((lambda (i) ((lambda () ((lambda (i) (* i i)) 1) ((lambda (i) (* i i)) 2) ((lambda (i) (* i i)) 3)) )) 2) ((lambda (i) ((lambda () ((lambda (i) (* i i)) 1) ((lambda (i) (* i i)) 2) ((lambda (i) (* i i)) 3)) )) 3)) )))`));
+    });
+    it('test 9', () => {
+        expect(bind(bind(bind(p(`(define a (- 3 2))`), parseL21Exp), L21ToL2), unparseL21)).to.deep.equal(makeOk(`(define a (- 3 2))`));
+    });
+
+    it('test 10', () => {
+        expect(bind(bind(bind(p(`(for i 1 3 (< i 3))`), parseL21Exp), L21ToL2), unparseL21)).to.deep.equal(makeOk(`((lambda () ((lambda (i) (< i 3)) 1) ((lambda (i) (< i 3)) 2) ((lambda (i) (< i 3)) 3)) )`));
+    });
+
+    it('test 10', () => {
+        expect(bind(bind(bind(p(`(for i 1 3 (+ i (* 2 i) 3))`), parseL21Exp), L21ToL2), unparseL21)).to.deep.equal(makeOk(`((lambda () ((lambda (i) (+ i (* 2 i) 3)) 1) ((lambda (i) (+ i (* 2 i) 3)) 2) ((lambda (i) (+ i (* 2 i) 3)) 3)) )`));
+    });
+
+    it('test 11', () => {
+        expect(bind(bind(bind(p(`(for i 1 2 (for j 1 2 (+ i j)))`), parseL21Exp), L21ToL2), unparseL21)).to.deep.equal(makeOk(`((lambda () ((lambda (i) ((lambda () ((lambda (j) (+ i j)) 1) ((lambda (j) (+ i j)) 2)) )) 1) ((lambda (i) ((lambda () ((lambda (j) (+ i j)) 1) ((lambda (j) (+ i j)) 2)) )) 2)) )`));
     });
 });
