@@ -49,16 +49,16 @@ const isRecEnv = (x: any): x is RecEnv => x.tag === "RecEnv";
 export const isEnv = (x: any): x is Env => isEmptyEnv(x) || isExtEnv(x) || isRecEnv(x);
 
 // Apply-env
-export const applyEnv = (env: Env, v: string): Result<Value> =>
+export const applyEnv = (env: Env, v: string): Result<CExp> =>
     isEmptyEnv(env) ? makeFailure(`var not found ${v}`) :
     isExtEnv(env) ? applyExtEnv(env, v) :
     applyRecEnv(env, v);
 
-const applyExtEnv = (env: ExtEnv, v: string): Result<Value> =>
+const applyExtEnv = (env: ExtEnv, v: string): Result<CExp> =>
     env.vars.includes(v) ? makeOk(env.vals[env.vars.indexOf(v)]) :
     applyEnv(env.nextEnv, v);
 
-const applyRecEnv = (env: RecEnv, v: string): Result<Value> =>
+const applyRecEnv = (env: RecEnv, v: string): Result<CExp> =>
     env.vars.includes(v) ? makeOk(makeClosure(env.paramss[env.vars.indexOf(v)],
                                               env.bodiess[env.vars.indexOf(v)],
                                               env)) :
