@@ -1,8 +1,8 @@
-import { Parsed, isProgram, isAtomicExp, isCompoundExp, AtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, Exp, isAppExp, DefineExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLetrecExp, isLitExp, isSetExp, Program, LitExp, CExp } from "./L4-ast";
+import { Parsed, isProgram, isAtomicExp, isCompoundExp, AtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, Exp, isAppExp, DefineExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLetrecExp, isLitExp, isSetExp, Program, LitExp, CExp, isVarDecl } from "./L4-ast";
 import { Result, bind, makeOk, mapResult, makeFailure } from "../shared/result";
 import { Graph, GraphContent, makeGraph, makeDir, CompoundGraph, makeCompoundGraph, AtomicGraph, makeAtomicGraph, makeNodeDecl, Edge, makeNodeRef, makeEdge, Node, NodeDecl } from "./mermaid-ast";
 import { is } from "ramda";
-import { SExpValue } from "./L4-value";
+import { SExpValue, isCompoundSExp } from "./L4-value";
 
 
 export const mapL4toMermaid = (exp: Parsed): Result<Graph> =>
@@ -42,25 +42,27 @@ const createExp = (exp: Exp | SExpValue): Edge[] => {
 const createDefine = (exp: DefineExp): Edge[] => {
     let id: string = counter("Define")
     let lnode: Node = makeNodeDecl(id, "DefineExp")
-    let rnode: Node = makeNodeDecl(counter("Var"), `[VarDecl(${exp.var})]`)
+    let rnode: Node = createAtomicNode(exp.val)
     let edges: Edge[] = [makeEdge(lnode, rnode, "-->|var|")]
 
     let lnode1: Node = makeNodeRef(id)
-    let rnode1: Node = createAtomicNode(exp.val,id)
+    let rnode1: Node = createAtomicNode(exp.val)
 
     edges.concat([makeEdge(lnode1, rnode1, "-->|val|")])
     return edges.concat(createExp(exp.val))
 }
 
 const createLit = (exp: LitExp): Edge[] => {
-    let lnode: Node = makeNodeDecl(counter("Define"), "DefineExp")
-    let rnode: Node = makeNodeDecl(counter("Var"), `[VarDecl(${exp.var})]`)
-    let edges: Edge[] = [makeEdge(lnode, rnode, "-->|var|")]
+    let lnode: Node = makeNodeDecl(counter("LitExp"), "LitExp")
+    let rnode: Node = createAtomicNode(exp.val)
+    let edges: Edge[] = [makeEdge(lnode, rnode, "-->|val|")]
     return edges.concat(createExp(exp.val))
 }
 
-const createAtomicNode = (exp: CExp): NodeDecl => {
+const createAtomicNode = (exp: CExp | SExpValue): NodeDecl => {
     isLitExp(exp) ? makeNodeDecl(counter("LitExp"), "LitExp") :
+    isCompoundSExp(exp) ? makeNodeDecl(counter("CompoundSExp"), "CompoundSExp") :
+    isVarDecl(exp) ? makeNodeDecl(counter("Var"), `[VarDecl(${exp.var})]`) : 
     undefined
 }
 
