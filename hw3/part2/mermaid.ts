@@ -1,24 +1,22 @@
-import { Parsed, isProgram, isAtomicExp, isCompoundExp, AtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, Exp, isAppExp, DefineExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLetrecExp, isLitExp, isSetExp, Program, LitExp, CExp, isVarDecl, ProcExp, isExp, VarDecl, makeVarRef, isBinding, AppExp, IfExp, Binding, LetExp, LetrecExp, SetExp } from "./L4-ast";
-import { Result, bind, makeOk, mapResult, makeFailure } from "../shared/result";
-import { Graph, GraphContent, makeGraph, makeDir, CompoundGraph, makeCompoundGraph, AtomicGraph, makeAtomicGraph, makeNodeDecl, Edge, makeNodeRef, makeEdge, Node, NodeDecl, NodeRef } from "./mermaid-ast";
-import { SExpValue, isCompoundSExp, LitSExp, isEmptySExp, isSymbolSExp, EmptySExp, SymbolSExp, CompoundSExp, isSExp, isClosure } from "./L4-value";
-import { map, concat } from "ramda";
+import { Parsed, isProgram, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, Exp, isAppExp, DefineExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLetrecExp, isLitExp, isSetExp, Program, LitExp, ProcExp, isExp, VarDecl, isBinding, AppExp, IfExp, Binding, LetExp, LetrecExp, SetExp } from "./L4-ast";
+import { Result, bind, makeOk, makeFailure } from "../shared/result";
+import { Graph, GraphContent, makeGraph, makeDir, makeCompoundGraph, makeAtomicGraph, makeNodeDecl, Edge, makeNodeRef, makeEdge } from "./mermaid-ast";
+import { SExpValue, isCompoundSExp, isEmptySExp, isSymbolSExp, SymbolSExp, CompoundSExp, isClosure } from "./L4-value";
 import { isEmpty, rest } from "../shared/list";
 import { makeVarGen } from "../L3/substitute";
-import { createInflate } from "zlib";
 
 export const mapL4toMermaid = (exp: Parsed): Result<Graph> =>
 	bind(l4GraphContent(exp), (graphCont: GraphContent) => makeOk(makeGraph(makeDir("TD"), graphCont)))
 
 const l4GraphContent = (exp: Parsed): Result<GraphContent> =>
-	isAtomicExp(exp) ? makeOk(makeAtomicGraph(makeNodeDecl(makeVar(exp.tag), generateNodeDeclLabel(exp)))) :
-		isProgram(exp) ? makeOk(makeCompoundGraph(createProgram(exp, makeVar("Exps")))) :
+	isAtomicExp(exp) ? makeOk(makeAtomicGraph(makeNodeDecl(varGenerator(exp.tag), generateNodeDeclLabel(exp)))) :
+		isProgram(exp) ? makeOk(makeCompoundGraph(createProgram(exp, varGenerator("Exps")))) :
 			isExp(exp) ? makeOk(makeCompoundGraph(createExpEdges(exp, ""))) :
 				makeFailure("error")
 
 const createProgram = (prog: Program, expsId: string): Edge[] =>
 	[makeEdge(
-		makeNodeDecl(makeVar(prog.tag), "Program"),
+		makeNodeDecl(varGenerator(prog.tag), "Program"),
 		makeNodeDecl(expsId, ":"), "Exps")].concat(
 			listLoop(prog.exps, expsId))
 
@@ -34,12 +32,12 @@ const listLoopVarDecl = (vars: VarDecl[], father: string): Edge[] =>
 const createVarDeclEdge = (vardecl: VarDecl, id: string): Edge[] =>
 	[makeEdge(
 		makeNodeRef(id),
-		makeNodeDecl(makeVar("Var"), `"VarDecl(${vardecl.var})"`))]
+		makeNodeDecl(varGenerator("Var"), `"VarDecl(${vardecl.var})"`))]
 
 const generateNodeDeclLabel = (exp: Exp | SExpValue): string =>
-	isNumExp(exp) ? `"number(${exp.val})"` :
-		isBoolExp(exp) ? `"boolean(${exp.val})"` :
-			isStrExp(exp) ? `"string(${exp.val})"` :
+	isNumExp(exp) ? `"NumExp(${exp.val})"` :
+		isBoolExp(exp) ? `"BoolExp(${exp.val})"` :
+			isStrExp(exp) ? `"StrExp(${exp.val})"` :
 				isPrimOp(exp) ? `"PrimOp(${exp.op})"` :
 					isVarRef(exp) ? `"VarRef(${exp.var})"` :
 						isDefineExp(exp) ? "DefineExp" :
@@ -52,33 +50,28 @@ const generateNodeDeclLabel = (exp: Exp | SExpValue): string =>
 													isSetExp(exp) ? "SetExp" :
 														isBinding(exp) ? "Binding" :
 															isEmptySExp(exp) ? "EmptySExp" :
-																isSymbolSExp(exp) ? "SymbolSExp" :
+																isSymbolSExp(exp) ? `"symbol(${exp.val})"` :
 																	isCompoundSExp(exp) ? "CompoundSexp" :
 																		isClosure(exp) ? "Closure" :
-																			""
+																			typeof (exp) === 'string' ? `"string(${exp})"` :
+																				typeof (exp) === 'boolean' ? `"boolean(${exp})"` :
+																					typeof (exp) === 'number' ? `"number(${exp})"` :
+																						""
 
 const createExpEdges = (exp: Exp | Binding, father: string): Edge[] =>
 	isAtomicExp(exp) ? [] :
-		isDefineExp(exp) || isBinding(exp) ? createDefineOrBinding(exp, father, makeVar(exp.tag), makeVar("Var"), makeVar(exp.val.tag)) :
-			isProcExp(exp) ? createProc(exp, father, makeVar(exp.tag), makeVar("Params"), makeVar("Body")) :
-				isAppExp(exp) ? createApp(exp, father, makeVar(exp.tag), makeVar(exp.rator.tag), makeVar("Rands")) :
-					isIfExp(exp) ? createIf(exp, father, makeVar(exp.tag), makeVar(exp.test.tag), makeVar(exp.then.tag), makeVar(exp.alt.tag)) :
-						isLetExp(exp) || isLetrecExp(exp) ? createLet(exp, father, makeVar(exp.tag), makeVar("Bindings"), makeVar("Body")) :
-							isSetExp(exp) ? createSet(exp, father, makeVar(exp.tag), makeVar("VarRef"), makeVar(exp.val.tag)) :
-								isLitExp(exp) ? createLit(exp, father, makeVar(exp.tag), sexpGenerator(exp.val)) :
+		isDefineExp(exp) || isBinding(exp) ? createDefineOrBinding(exp, father, varGenerator(exp.tag), varGenerator("Var"), varGenerator(exp.val.tag)) :
+			isProcExp(exp) ? createProc(exp, father, varGenerator(exp.tag), varGenerator("Params"), varGenerator("Body")) :
+				isAppExp(exp) ? createApp(exp, father, varGenerator(exp.tag), varGenerator(exp.rator.tag), varGenerator("Rands")) :
+					isIfExp(exp) ? createIf(exp, father, varGenerator(exp.tag), varGenerator(exp.test.tag), varGenerator(exp.then.tag), varGenerator(exp.alt.tag)) :
+						isLetExp(exp) || isLetrecExp(exp) ? createLet(exp, father, varGenerator(exp.tag), varGenerator("Bindings"), varGenerator("Body")) :
+							isSetExp(exp) ? createSet(exp, father, varGenerator(exp.tag), varGenerator(exp.var.tag), varGenerator(exp.val.tag)) :
+								isLitExp(exp) ? createLit(exp, father, varGenerator(exp.tag), sexpGenerator(exp.val)) :
 									[]
 
 const createSSExpEdges = (exp: SExpValue, father: string): Edge[] =>
-	isEmptySExp(exp) ? [] :
-		isSymbolSExp(exp) ? createSymbolSExp(exp, father, sexpGenerator(exp.tag)) :
-			isCompoundSExp(exp) ? createCompoundSExp(exp, father, sexpGenerator(exp.val1), sexpGenerator(exp.val2)) :
-				[]
-
-const createSymbolSExp = (exp: SymbolSExp, father: string, ID: string): Edge[] =>
-	[makeEdge(
-		makeNodeRef(father),
-		makeNodeDecl(ID, exp.val))
-	]
+	isCompoundSExp(exp) ? createCompoundSExp(exp, father, sexpGenerator(exp.val1), sexpGenerator(exp.val2)) :
+		[]
 
 const createCompoundSExp = (exp: CompoundSExp, father: string, ID1: string, ID2: string): Edge[] =>
 	[makeEdge(
@@ -195,7 +188,7 @@ const createApp = (exp: AppExp, father: string, ID: string, ratorID: string, ran
 const createDefineOrBinding = (exp: DefineExp | Binding, father: string, ID: string, varID: string, valID: string): Edge[] =>
 	father === "" ? [makeEdge(
 		(isDefineExp(exp) ? makeNodeDecl(ID, "DefineExp") : makeNodeDecl(ID, "Binding")),
-		makeNodeDecl(varID, `["VarDecl(${exp.var.var})"]`), "var")].concat(
+		makeNodeDecl(varID, `"VarDecl(${exp.var.var})"`), "var")].concat(
 			[makeEdge(
 				makeNodeRef(ID),
 				makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")]).concat(
@@ -206,7 +199,7 @@ const createDefineOrBinding = (exp: DefineExp | Binding, father: string, ID: str
 			(isDefineExp(exp) ? makeNodeDecl(ID, "DefineExp") : makeNodeDecl(ID, "Binding")))].concat(
 				[makeEdge(
 					makeNodeRef(ID),
-					makeNodeDecl(varID, `["VarDecl(${exp.var.var})"]`), "var")],
+					makeNodeDecl(varID, `"VarDecl(${exp.var.var})"`), "var")],
 				[makeEdge(
 					makeNodeRef(ID),
 					makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")]).concat(
@@ -235,37 +228,71 @@ const createProc = (exp: ProcExp, father: string, ID: string, paramsID: string, 
 						listLoopVarDecl(exp.args, paramsID), listLoop(exp.body, bodyID))
 
 
-const countProgram = makeVarGen();
-const countDefine = makeVarGen();
-const countNumExp = makeVarGen();
-const countBoolExp = makeVarGen();
-const countStrExp = makeVarGen();
-const countPrimOp = makeVarGen();
-const countVarRef = makeVarGen();
-const countVarDecl = makeVarGen();
-const countAppExp = makeVarGen();
-const countIfExp = makeVarGen();
-const countProcExp = makeVarGen();
-const countBinding = makeVarGen();
-const countLetExp = makeVarGen();
-const countLitExp = makeVarGen();
-const countLetrecExp = makeVarGen();
-const countSetExp = makeVarGen();
-const countVarID = makeVarGen();
+const varProgram = makeVarGen();
+const varDefine = makeVarGen();
+const varNumExp = makeVarGen();
+const varBoolExp = makeVarGen();
+const varStrExp = makeVarGen();
+const varPrimOp = makeVarGen();
+const varVarRef = makeVarGen();
+const varVarDecl = makeVarGen();
+const varAppExp = makeVarGen();
+const varIfExp = makeVarGen();
+const varProcExp = makeVarGen();
+const varBinding = makeVarGen();
+const varBindings = makeVarGen();
+const varLetExp = makeVarGen();
+const varLitExp = makeVarGen();
+const varLetrecExp = makeVarGen();
+const varSetExp = makeVarGen();
+const varParams = makeVarGen();
+const varBody = makeVarGen();
+const varCompoundExp = makeVarGen();
+const varNumber = makeVarGen();
+const varBoolean = makeVarGen();
+const varString = makeVarGen();
+const varClosure = makeVarGen();
+const varSymbolSExp = makeVarGen();
+const varEmptySExp = makeVarGen();
+const varCompoundSExp = makeVarGen();
+
+export const varGenerator = (exp: string): string =>
+	exp === "ProgramExp" ? varProgram("ProgramExp") :
+		exp === "DefineExp" ? varDefine("DefineExp") :
+			exp === "NumExp" ? varNumExp("NumExp") :
+				exp === "BoolExp" ? varBoolExp("BoolExp") :
+					exp === "StrExp" ? varStrExp("StrExp") :
+						exp === "PrimOp" ? varPrimOp("PrimOp") :
+							exp === "VarRef" ? varVarRef("VarRef") :
+								exp === "VarDecl" ? varVarDecl("VarDecl") :
+									exp === "AppExp" ? varAppExp("AppExp") :
+										exp === "IfExp" ? varIfExp("IfExp") :
+											exp === "ProcExp" ? varProcExp("ProcExp") :
+												exp === "Binding" ? varBinding("Binding") :
+													exp === "Bindings" ? varBindings("Bindings") :
+														exp === "LetExp" ? varLetExp("LetExp") :
+															exp === "LitExp" ? varLitExp("LitExp") :
+																exp === "LetrecExp" ? varLetrecExp("LetrecExp") :
+																	exp === "SetExp" ? varSetExp("SetExp") :
+																		exp === "Params" ? varParams("Params") :
+																			exp === "Body" ? varBody("Body") :
+																				exp === "CompoundExp" ? varCompoundExp("CompoundExp") :
+																					exp === "Number" ? varNumber("Number") :
+																						exp === "Boolean" ? varBoolean("Boolean") :
+																							exp === "String" ? varString("String") :
+																								exp === "Closure" ? varClosure("Closure") :
+																									exp === "SymbolSExp" ? varSymbolSExp("SymbolSExp") :
+																										exp === "EmptySExp" ? varEmptySExp("EmptySExp") :
+																											exp === "CompoundSExp" ? varCompoundSExp("CompoundSExp") :
+																												""
 
 export const sexpGenerator = (exp: SExpValue): string =>
-	isSymbolSExp(exp) ? makeVar("SymbolSExp") :
-		isCompoundSExp(exp) ? makeVar("CompoundSExp") :
-			isEmptySExp(exp) ? makeVar("EmptySExp") :
-				isPrimOp(exp) ? makeVar("PrimOp") :
-					isClosure(exp) ? makeVar("Closure") :
-						typeof (exp) === 'string' ? `"${exp}"` :
-							typeof (exp) === 'boolean' ? `"${exp}"` :
-								typeof (exp) === 'number' ? `"${exp}"` :
+	isSymbolSExp(exp) ? varGenerator("SymbolSExp") :
+		isCompoundSExp(exp) ? varGenerator("CompoundSExp") :
+			isEmptySExp(exp) ? varGenerator("EmptySExp") :
+				isPrimOp(exp) ? varGenerator("PrimOp") :
+					isClosure(exp) ? varGenerator("Closure") :
+						typeof (exp) === 'string' ? varGenerator("string") :
+							typeof (exp) === 'boolean' ? varGenerator("boolean") :
+								typeof (exp) === 'number' ? varGenerator("number") :
 									""
-
-
-export const makeVar = (exp: string): string =>
-	exp === "ProgramExp" ? countProgram("ProgramExp") :
-		exp === "DefineExp" ? countDefine("DefineExp") :
-			""
