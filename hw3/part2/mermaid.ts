@@ -1,9 +1,11 @@
-import { Parsed, isProgram, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, Exp, isAppExp, DefineExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLetrecExp, isLitExp, isSetExp, Program, LitExp, ProcExp, isExp, VarDecl, isBinding, AppExp, IfExp, Binding, LetExp, LetrecExp, SetExp } from "./L4-ast";
-import { Result, bind, makeOk, makeFailure } from "../shared/result";
-import { Graph, GraphContent, makeGraph, makeDir, makeCompoundGraph, makeAtomicGraph, makeNodeDecl, Edge, makeNodeRef, makeEdge } from "./mermaid-ast";
-import { SExpValue, isCompoundSExp, isEmptySExp, isSymbolSExp, SymbolSExp, CompoundSExp, isClosure } from "./L4-value";
+import { Parsed, isProgram, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, Exp, isAppExp, DefineExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLetrecExp, isLitExp, isSetExp, Program, LitExp, ProcExp, isExp, VarDecl, isBinding, AppExp, IfExp, Binding, LetExp, LetrecExp, SetExp, parseL4, parseL4Exp } from "./L4-ast";
+import { Result, bind, makeOk, makeFailure, isOk } from "../shared/result";
+import { Graph, GraphContent, makeGraph, makeDir, makeCompoundGraph, makeAtomicGraph, makeNodeDecl, Edge, makeNodeRef, makeEdge, isAtomicGraph, NodeDecl, NodeRef, isNodeDecl, Node } from "./mermaid-ast";
+import { SExpValue, isCompoundSExp, isEmptySExp, isSymbolSExp, CompoundSExp, isClosure } from "./L4-value";
 import { isEmpty, rest } from "../shared/list";
 import { makeVarGen } from "../L3/substitute";
+import { map } from "ramda";
+import { parse as p } from "../shared/parser";
 
 export const mapL4toMermaid = (exp: Parsed): Result<Graph> =>
 	bind(l4GraphContent(exp), (graphCont: GraphContent) => makeOk(makeGraph(makeDir("TD"), graphCont)))
@@ -35,11 +37,11 @@ const createVarDeclEdge = (vardecl: VarDecl, id: string): Edge[] =>
 		makeNodeDecl(varGenerator("Var"), `"VarDecl(${vardecl.var})"`))]
 
 const generateNodeDeclLabel = (exp: Exp | SExpValue): string =>
-	isNumExp(exp) ? `"NumExp(${exp.val})"` :
-		isBoolExp(exp) ? `"BoolExp(${exp.val})"` :
-			isStrExp(exp) ? `"StrExp(${exp.val})"` :
-				isPrimOp(exp) ? `"PrimOp(${exp.op})"` :
-					isVarRef(exp) ? `"VarRef(${exp.var})"` :
+	isNumExp(exp) ? `NumExp(${exp.val})` :
+		isBoolExp(exp) ? `BoolExp(${exp.val})` :
+			isStrExp(exp) ? `StrExp(${exp.val})` :
+				isPrimOp(exp) ? `PrimOp(${exp.op})` :
+					isVarRef(exp) ? `VarRef(${exp.var})` :
 						isDefineExp(exp) ? "DefineExp" :
 							isProcExp(exp) ? "ProcExp" :
 								isAppExp(exp) ? "AppExp" :
@@ -50,12 +52,12 @@ const generateNodeDeclLabel = (exp: Exp | SExpValue): string =>
 													isSetExp(exp) ? "SetExp" :
 														isBinding(exp) ? "Binding" :
 															isEmptySExp(exp) ? "EmptySExp" :
-																isSymbolSExp(exp) ? `"symbol(${exp.val})"` :
+																isSymbolSExp(exp) ? `Symbol(${exp.val})` :
 																	isCompoundSExp(exp) ? "CompoundSexp" :
 																		isClosure(exp) ? "Closure" :
-																			typeof (exp) === 'string' ? `"string(${exp})"` :
-																				typeof (exp) === 'boolean' ? `"boolean(${exp})"` :
-																					typeof (exp) === 'number' ? `"number(${exp})"` :
+																			typeof (exp) === 'string' ? `string(${exp})` :
+																				typeof (exp) === 'boolean' ? `boolean(${exp})` :
+																					typeof (exp) === 'number' ? `number(${exp})` :
 																						""
 
 const createExpEdges = (exp: Exp | Binding, father: string): Edge[] =>
@@ -71,6 +73,7 @@ const createExpEdges = (exp: Exp | Binding, father: string): Edge[] =>
 
 const createSSExpEdges = (exp: SExpValue, father: string): Edge[] =>
 	isCompoundSExp(exp) ? createCompoundSExp(exp, father, sexpGenerator(exp.val1), sexpGenerator(exp.val2)) :
+		//isClosure(exp) ? createClosure
 		[]
 
 const createCompoundSExp = (exp: CompoundSExp, father: string, ID1: string, ID2: string): Edge[] =>
@@ -227,7 +230,6 @@ const createProc = (exp: ProcExp, father: string, ID: string, paramsID: string, 
 					makeNodeDecl(bodyID, ":"), "body")]).concat(
 						listLoopVarDecl(exp.args, paramsID), listLoop(exp.body, bodyID))
 
-
 const varProgram = makeVarGen();
 const varDefine = makeVarGen();
 const varNumExp = makeVarGen();
@@ -255,6 +257,8 @@ const varClosure = makeVarGen();
 const varSymbolSExp = makeVarGen();
 const varEmptySExp = makeVarGen();
 const varCompoundSExp = makeVarGen();
+const varVar = makeVarGen();
+const varRands = makeVarGen();
 
 export const varGenerator = (exp: string): string =>
 	exp === "ProgramExp" ? varProgram("ProgramExp") :
@@ -284,7 +288,9 @@ export const varGenerator = (exp: string): string =>
 																									exp === "SymbolSExp" ? varSymbolSExp("SymbolSExp") :
 																										exp === "EmptySExp" ? varEmptySExp("EmptySExp") :
 																											exp === "CompoundSExp" ? varCompoundSExp("CompoundSExp") :
-																												""
+																												exp === "Var" ? varVar("Var") :
+																													exp === "Rands" ? varRands("Rands") :
+																														""
 
 export const sexpGenerator = (exp: SExpValue): string =>
 	isSymbolSExp(exp) ? varGenerator("SymbolSExp") :
@@ -292,7 +298,38 @@ export const sexpGenerator = (exp: SExpValue): string =>
 			isEmptySExp(exp) ? varGenerator("EmptySExp") :
 				isPrimOp(exp) ? varGenerator("PrimOp") :
 					isClosure(exp) ? varGenerator("Closure") :
-						typeof (exp) === 'string' ? varGenerator("string") :
-							typeof (exp) === 'boolean' ? varGenerator("boolean") :
-								typeof (exp) === 'number' ? varGenerator("number") :
+						typeof (exp) === 'string' ? varGenerator("String") :
+							typeof (exp) === 'boolean' ? varGenerator("Boolean") :
+								typeof (exp) === 'number' ? varGenerator("Number") :
 									""
+
+/************************* Q2.3 *************************/
+
+export const unparseMermaid = (exp: Graph): Result<string> =>
+	makeOk(`graph ${exp.dir.direction}${unparseGraphContent(exp.content)}`)
+
+const unparseGraphContent = (content: GraphContent): string =>
+	isAtomicGraph(content) ? unparseNode(content.nodeDecl) :
+		map(unparseEdge, content.edges).join(`\n`)
+
+const unparseEdge = (edge: Edge) =>
+	(edge.label == undefined) ? `${unparseNode(edge.from)}-->${unparseNode(edge.to)}` :
+		`${unparseNode(edge.from)}-->|${edge.label}|${unparseNode(edge.to)}`
+
+const unparseNode = (node: Node): string =>
+	isNodeDecl(node) ? unparseNodeDecl(node) : unparseNodeRef(node)
+
+const unparseNodeRef = (ref: NodeRef): string => `${ref.id}`
+
+const unparseNodeDecl = (decl: NodeDecl): string => `${decl.id}["${decl.label}"]`
+
+export const L4toMermaid = (concrete: string): Result<string> =>
+	bind(bind(ExpOrProgram(concrete), mapL4toMermaid), unparseMermaid)
+
+const ExpOrProgram = (concrete: string): Result<Parsed> => 
+!isOk(parseL4(concrete)) ? bind(p(concrete), parseL4Exp) : parseL4(concrete)
+
+
+
+
+
