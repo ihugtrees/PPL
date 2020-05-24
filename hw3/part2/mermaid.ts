@@ -5,7 +5,7 @@ import { SExpValue, isCompoundSExp, isEmptySExp, isSymbolSExp, CompoundSExp, isC
 import { isEmpty, rest } from "../shared/list";
 import { makeVarGen } from "../L3/substitute";
 import { map } from "ramda";
-import { parse as p } from "../shared/parser";
+import { parse as p } from "../shared/parser";   
 
 export const mapL4toMermaid = (exp: Parsed): Result<Graph> =>
 	bind(l4GraphContent(exp), (graphCont: GraphContent) => makeOk(makeGraph(makeDir("TD"), graphCont)))
