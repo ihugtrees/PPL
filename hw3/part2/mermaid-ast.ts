@@ -18,7 +18,7 @@ export const makeGraph = (dir: Dir, content: GraphContent): Graph => ({ tag: "Gr
 export const makeDir = (direction: string): Dir => ({ tag: "Dir", direction: direction + "\n" })
 export const makeAtomicGraph = (nodeDecl: NodeDecl): AtomicGraph => ({ tag: "AtomicGraph", nodeDecl: nodeDecl });
 export const makeCompoundGraph = (edges: Edge[]): CompoundGraph => ({ tag: "CompoundGraph", edges: edges });
-export const makeEdge = (from: Node, to: Node, label?: string): Edge => ({ tag: "Edge", from: from, to: to, label: label + "\n" });
+export const makeEdge = (from: Node, to: Node, label?: string): Edge => ({ tag: "Edge", from: from, to: to, label: label });
 export const makeNodeDecl = (id: string, label: string): NodeDecl => ({ tag: "NodeDecl", id: id, label: label });
 export const makeNodeRef = (id: string): NodeRef => ({ tag: "NodeRef", id: id });
 

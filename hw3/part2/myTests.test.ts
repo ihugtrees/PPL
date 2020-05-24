@@ -32,8 +32,8 @@ const p18 = L4toMermaid('(L4 (set! x 5))');
 const p19 = L4toMermaid('(set! x 5)');
 
 isOk(p1) ? console.log(p1.value) : console.log(p1.message)
-// isOk(p2) ? console.log(p2.value) : console.log(p2.message)
-// isOk(p3) ? console.log(p3.value) : console.log(p3.message)
+//isOk(p2) ? console.log(p2.value) : console.log(p2.message)
+//isOk(p3) ? console.log(p3.value) : console.log(p3.message)
 // isOk(p4) ? console.log(p4.value) : console.log(p4.message)
 // isOk(p5) ? console.log(p5.value) : console.log(p5.message)
 // isOk(p6) ? console.log(p6.value) : console.log(p6.message)
