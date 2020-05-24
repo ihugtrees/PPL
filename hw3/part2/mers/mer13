@@ -1,0 +1,10 @@
+graph TD
+	Program_4[Program] -->|exps| Exps_4[:]
+	Exps_4 --> ProcExp_10[ProcExp]
+	ProcExp_10 -->|args| Params_10[:]
+	Params_10 --> VarDecl_22["VarDecl(z)"]
+	ProcExp_10 -->|body| Body_13[:]
+	Body_13 --> AppExp_28[AppExp]
+	AppExp_28 -->|rator| VarRef_31["VarRef(x)"]
+	AppExp_28 -->|rands| Rands_28[:]
+	Rands_28 --> VarRef_32["VarRef(z)"]

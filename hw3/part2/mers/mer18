@@ -1,0 +1,10 @@
+graph TD
+	Program_6[Program] -->|exps| Exps_6[:]
+	Exps_6 --> SetExp_1[SetExp]
+	SetExp_1 -->|var| VarRef_36["VarRef(x)"]
+	SetExp_1 -->|val| NumExp_33["NumExp(5)"]
+	Exps_6 --> AppExp_32[AppExp]
+	AppExp_32 -->|rator| PrimOp_23["PrimOp(+)"]
+	AppExp_32 -->|rands| Rands_32[:]
+	Rands_32 --> VarRef_37["VarRef(x)"]
+	Rands_32 --> NumExp_34["NumExp(5)"]

@@ -5,7 +5,7 @@ import { SExpValue, isCompoundSExp, isEmptySExp, isSymbolSExp, CompoundSExp, isC
 import { isEmpty, rest } from "../shared/list";
 import { makeVarGen } from "../L3/substitute";
 import { map } from "ramda";
-import { parse as p } from "../shared/parser";   
+import { parse as p } from "../shared/parser";
 
 export const mapL4toMermaid = (exp: Parsed): Result<Graph> =>
 	bind(l4GraphContent(exp), (graphCont: GraphContent) => makeOk(makeGraph(makeDir("TD"), graphCont)))
@@ -36,7 +36,7 @@ const listLoopVarDecl = (vars: VarDecl[], father: string): Edge[] =>
 const createVarDeclEdge = (vardecl: VarDecl, id: string): Edge[] =>
 	[makeEdge(
 		makeNodeRef(id),
-		makeNodeDecl(varGenerator("Var"), `VarDecl(${vardecl.var})`))]
+		makeNodeDecl(varGenerator("Var"), `"VarDecl(${vardecl.var})"`))]
 
 const createAtomicEdge = (atomic: AtomicExp, father: string): Edge[] =>
 	[makeEdge(
@@ -44,13 +44,12 @@ const createAtomicEdge = (atomic: AtomicExp, father: string): Edge[] =>
 		makeNodeDecl(varGenerator(atomic.tag), generateNodeDeclLabel(atomic))
 	)]
 
-
 const generateNodeDeclLabel = (exp: Exp | SExpValue): string =>
-	isNumExp(exp) ? `NumExp(${exp.val})` :
-		isBoolExp(exp) ? `BoolExp(` + (exp.val ? `#t)` : `#f)`) :
-			isStrExp(exp) ? `StrExp(${exp.val})` :
-				isPrimOp(exp) ? `PrimOp(${exp.op})` :
-					isVarRef(exp) ? `VarRef(${exp.var})` :
+	isNumExp(exp) ? `"NumExp(${exp.val})"` :
+		isBoolExp(exp) ? `"BoolExp(` + (exp.val ? `#t` : `#f`) + `)"` :
+			isStrExp(exp) ? `"StrExp(${exp.val})"` :
+				isPrimOp(exp) ? `"PrimOp(${exp.op})"` :
+					isVarRef(exp) ? `"VarRef(${exp.var})"` :
 						isDefineExp(exp) ? "DefineExp" :
 							isProcExp(exp) ? "ProcExp" :
 								isAppExp(exp) ? "AppExp" :
@@ -60,34 +59,66 @@ const generateNodeDeclLabel = (exp: Exp | SExpValue): string =>
 												isLetrecExp(exp) ? "LetrecExp" :
 													isSetExp(exp) ? "SetExp" :
 														isBinding(exp) ? "Binding" :
-															isEmptySExp(exp) ? "EmptySExp" :
-																isSymbolSExp(exp) ? `Symbol(${exp.val})` :
-																	isCompoundSExp(exp) ? "CompoundSexp" :
-																		isClosure(exp) ? "Closure" :
-																			typeof (exp) === 'string' ? `string(${exp})` :
-																				typeof (exp) === 'boolean' ? `boolean(${exp})` :
-																					typeof (exp) === 'number' ? `number(${exp})` :
-																						""
+															isEmptySExp(exp) ? `"EmptySExp"` :
+																isSymbolSExp(exp) ? `"Symbol(${exp.val})"` :
+																	isCompoundSExp(exp) ? `"CompoundSExp"` :
+																		//isClosure(exp) ? "Closure" :
+																		typeof (exp) === 'string' ? `"string(${exp})"` :
+																			typeof (exp) === 'boolean' ? `"boolean(` + (exp ? `#t` : `#f`) + `)"` :
+																				typeof (exp) === 'number' ? `"number(${exp})"` :
+																					""
 
 const createExpEdges = (exp: Exp | Binding, father: string, defined: boolean): Edge[] =>
 	defined ? (
 		isDefineExp(exp) || isBinding(exp) ? createDefineOrBinding(exp, father, varGenerator("Var"), varGenerator(exp.val.tag)) :
-			isProcExp(exp) ? createProc(exp, father, varGenerator(exp.tag), varGenerator("Params"), varGenerator("Body")) :
+			isProcExp(exp) ? createProc(exp, father, varGenerator("Params"), varGenerator("Body")) :
 				isAppExp(exp) ? createApp(exp, father, varGenerator(exp.rator.tag), varGenerator("Rands")) :
 					isIfExp(exp) ? createIf(exp, father, varGenerator(exp.test.tag), varGenerator(exp.then.tag), varGenerator(exp.alt.tag)) :
-						isLetExp(exp) || isLetrecExp(exp) ? createLet(exp, father, varGenerator(exp.tag), varGenerator("Bindings"), varGenerator("Body")) :
-							isSetExp(exp) ? createSet(exp, father, varGenerator(exp.tag), varGenerator(exp.var.tag), varGenerator(exp.val.tag)) :
-								isLitExp(exp) ? createLit(exp, father, varGenerator(exp.tag), sexpGenerator(exp.val)) :
+						isLetExp(exp) || isLetrecExp(exp) ? createLet(exp, father, varGenerator("Bindings"), varGenerator("Body")) :
+							isSetExp(exp) ? createSet(exp, father, varGenerator(exp.var.tag), varGenerator(exp.val.tag)) :
+								isLitExp(exp) ? createLit(exp, father, sexpGenerator(exp.val)) :
 									[]
 	) : (
 			isDefineExp(exp) || isBinding(exp) ? createDefineOrBinding(exp, father, varGenerator("Var"), varGenerator(exp.val.tag), varGenerator(exp.tag)) :
-				isProcExp(exp) ? createProc(exp, father, varGenerator(exp.tag), varGenerator("Params"), varGenerator("Body")) :
+				isProcExp(exp) ? createProc(exp, father, varGenerator("Params"), varGenerator("Body"), varGenerator(exp.tag)) :
 					isAppExp(exp) ? createApp(exp, father, varGenerator(exp.rator.tag), varGenerator("Rands"), varGenerator(exp.tag)) :
 						isIfExp(exp) ? createIf(exp, father, varGenerator(exp.test.tag), varGenerator(exp.then.tag), varGenerator(exp.alt.tag), varGenerator(exp.tag)) :
-							isLetExp(exp) || isLetrecExp(exp) ? createLet(exp, father, varGenerator(exp.tag), varGenerator("Bindings"), varGenerator("Body")) :
-								isSetExp(exp) ? createSet(exp, father, varGenerator(exp.tag), varGenerator(exp.var.tag), varGenerator(exp.val.tag)) :
-									isLitExp(exp) ? createLit(exp, father, varGenerator(exp.tag), sexpGenerator(exp.val)) :
+							isLetExp(exp) || isLetrecExp(exp) ? createLet(exp, father, varGenerator("Bindings"), varGenerator("Body"), varGenerator(exp.tag)) :
+								isSetExp(exp) ? createSet(exp, father, varGenerator(exp.var.tag), varGenerator(exp.val.tag), varGenerator(exp.tag)) :
+									isLitExp(exp) ? createLit(exp, father, sexpGenerator(exp.val), varGenerator(exp.tag)) :
 										[]
+		)
+
+const createSSExpEdges = (exp: SExpValue, father: string): Edge[] =>
+	isCompoundSExp(exp) ? createCompoundSExp(exp, father, sexpGenerator(exp.val1), sexpGenerator(exp.val2)) :
+		//isClosure(exp) ? createClosure
+		[]
+
+const createCompoundSExp = (exp: CompoundSExp, father: string, ID1: string, ID2: string): Edge[] =>
+	[makeEdge(
+		makeNodeRef(father),
+		makeNodeDecl(ID1, generateNodeDeclLabel(exp.val1)), "val1"),
+	makeEdge(
+		makeNodeRef(father),
+		makeNodeDecl(ID2, generateNodeDeclLabel(exp.val2)), "val2")
+	].concat(createSSExpEdges(exp.val1, ID1), createSSExpEdges(exp.val2, ID2))
+
+const createLit = (exp: LitExp, father: string, sexpID: string, ID?: string): Edge[] =>
+	ID ? (
+		father === "" ? [makeEdge(
+			makeNodeDecl(ID, "LitExp"),
+			makeNodeDecl(sexpID, generateNodeDeclLabel(exp.val)), "val")].concat(createSSExpEdges(exp.val, sexpID))
+			:
+			[makeEdge(
+				makeNodeRef(father),
+				makeNodeDecl(ID, "LitExp")),
+			makeEdge(
+				makeNodeRef(ID),
+				makeNodeDecl(sexpID, generateNodeDeclLabel(exp.val)), "val")].concat(createSSExpEdges(exp.val, sexpID))
+	) : (
+			[makeEdge(
+				makeNodeRef(father),
+				makeNodeDecl(sexpID, generateNodeDeclLabel(exp.val)), "val")].concat(createSSExpEdges(exp.val, sexpID))
 		)
 
 const createIf = (exp: IfExp, father: string, testID: string, thenID: string, altID: string, ID?: string): Edge[] =>
@@ -136,94 +167,82 @@ const createDefineOrBinding = (exp: DefineExp | Binding, father: string, varID: 
 	ID ? (
 		father === "" ? [makeEdge(
 			(isDefineExp(exp) ? makeNodeDecl(ID, "DefineExp") : makeNodeDecl(ID, "Binding")),
-			makeNodeDecl(varID, `VarDecl(${exp.var.var})`), "var")].concat(
+			makeNodeDecl(varID, `"VarDecl(${exp.var.var})"`), "var")].concat(
 				[makeEdge(
 					makeNodeRef(ID),
-					makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")]).concat(
-						createExpEdges(exp.val, valID, true))
+					makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")]).concat(createExpEdges(exp.val, valID, true))
 			:
 			[makeEdge(
 				makeNodeRef(father),
 				(isDefineExp(exp) ? makeNodeDecl(ID, "DefineExp") : makeNodeDecl(ID, "Binding")))].concat(
 					[makeEdge(
 						makeNodeRef(ID),
-						makeNodeDecl(varID, `VarDecl(${exp.var.var})`), "var")],
+						makeNodeDecl(varID, `"VarDecl(${exp.var.var})"`), "var")],
 					[makeEdge(
 						makeNodeRef(ID),
-						makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")]).concat(
-							createExpEdges(exp.val, valID, true))
+						makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")]).concat(createExpEdges(exp.val, valID, true))
 
 	) : (
 			[makeEdge(
 				makeNodeRef(father),
-				makeNodeDecl(varID, `VarDecl(${exp.var.var})`), "var"),
+				makeNodeDecl(varID, `"VarDecl(${exp.var.var})"`), "var"),
 			makeEdge(
 				makeNodeRef(father),
-				makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")].concat(
-					createExpEdges(exp.val, valID, true))
+				makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")].concat(createExpEdges(exp.val, valID, true))
 		)
 
-const createSSExpEdges = (exp: SExpValue, father: string): Edge[] =>
-	isCompoundSExp(exp) ? createCompoundSExp(exp, father, sexpGenerator(exp.val1), sexpGenerator(exp.val2)) :
-		//isClosure(exp) ? createClosure
-		[]
-
-const createCompoundSExp = (exp: CompoundSExp, father: string, ID1: string, ID2: string): Edge[] =>
-	[makeEdge(
-		makeNodeRef(father),
-		makeNodeDecl(ID1, generateNodeDeclLabel(exp.val1)), "val1"),
-	makeEdge(
-		makeNodeRef(father),
-		makeNodeDecl(ID2, generateNodeDeclLabel(exp.val2)), "val2")
-	].concat(createSSExpEdges(exp.val1, ID1), createSSExpEdges(exp.val2, ID2))
-
-const createLit = (exp: LitExp, father: string, ID: string, sexpID: string): Edge[] =>
-	father === "" ? [makeEdge(
-		makeNodeDecl(ID, "LitExp"),
-		makeNodeDecl(sexpID, generateNodeDeclLabel(exp.val)), "val")].concat(createSSExpEdges(exp.val, sexpID))
-		:
-		[makeEdge(
-			makeNodeRef(father),
-			makeNodeDecl(ID, "LitExp")),
-		makeEdge(
-			makeNodeRef(ID),
-			makeNodeDecl(sexpID, generateNodeDeclLabel(exp.val)), "val")].concat(createSSExpEdges(exp.val, sexpID))
-
-const createSet = (exp: SetExp, father: string, ID: string, varrefID: string, valID: string): Edge[] =>
-	father === "" ? [makeEdge(
-		makeNodeDecl(ID, "SetExp"),
-		makeNodeDecl(varrefID, generateNodeDeclLabel(exp.var)), "var")].concat(
+const createSet = (exp: SetExp, father: string, varrefID: string, valID: string, ID?: string): Edge[] =>
+	ID ? (
+		father === "" ? [makeEdge(
+			makeNodeDecl(ID, "SetExp"),
+			makeNodeDecl(varrefID, generateNodeDeclLabel(exp.var)), "var")].concat(
+				[makeEdge(
+					makeNodeRef(ID),
+					makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")]).concat(createExpEdges(exp.val, valID, true))
+			:
 			[makeEdge(
-				makeNodeRef(ID),
-				makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")])//.concat(createExpEdges(exp.val, valID))
-		:
-		[makeEdge(
-			makeNodeRef(father),
-			makeNodeDecl(ID, "SetExp"))].concat(
-				[makeEdge(
-					makeNodeRef(ID),
-					makeNodeDecl(varrefID, generateNodeDeclLabel(exp.var)), "var")],
-				[makeEdge(
-					makeNodeRef(ID),
-					makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")])//.concat(createExpEdges(exp.val, valID))
-
-const createLet = (exp: LetExp | LetrecExp, father: string, ID: string, bindingID: string, bodyID: string): Edge[] =>
-	father === "" ? [makeEdge(
-		(isLetExp(exp) ? makeNodeDecl(ID, "LetExp") : makeNodeDecl(ID, "LetrecExp")),
-		makeNodeDecl(bindingID, ":"), "bindings")].concat(
+				makeNodeRef(father),
+				makeNodeDecl(ID, "SetExp"))].concat(
+					[makeEdge(
+						makeNodeRef(ID),
+						makeNodeDecl(varrefID, generateNodeDeclLabel(exp.var)), "var")],
+					[makeEdge(
+						makeNodeRef(ID),
+						makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")]).concat(createExpEdges(exp.val, valID, true))
+	) : (
 			[makeEdge(
-				makeNodeRef(ID),
-				makeNodeDecl(bodyID, ":"), "body")])//.concat(listLoopBinding(exp.bindings, bindingID), listLoop(exp.body, bodyID))
-		:
-		[makeEdge(
-			makeNodeRef(father),
-			(isLetExp(exp) ? makeNodeDecl(ID, "LetExp") : makeNodeDecl(ID, "LetrecExp")))].concat(
+				makeNodeRef(father),
+				makeNodeDecl(varrefID, generateNodeDeclLabel(exp.var)), "var"),
+			makeEdge(
+				makeNodeRef(father),
+				makeNodeDecl(valID, generateNodeDeclLabel(exp.val)), "val")].concat(createExpEdges(exp.val, valID, true))
+		)
+const createLet = (exp: LetExp | LetrecExp, father: string, bindingID: string, bodyID: string, ID?: string): Edge[] =>
+	ID ? (
+		father === "" ? [makeEdge(
+			(isLetExp(exp) ? makeNodeDecl(ID, "LetExp") : makeNodeDecl(ID, "LetrecExp")),
+			makeNodeDecl(bindingID, ":"), "bindings")].concat(
 				[makeEdge(
 					makeNodeRef(ID),
-					makeNodeDecl(bindingID, ":"), "bindings")],
-				[makeEdge(
-					makeNodeRef(ID),
-					makeNodeDecl(bodyID, ":"), "body")])//.concat(listLoopBinding(exp.bindings, bindingID), listLoop(exp.body, bodyID))
+					makeNodeDecl(bodyID, ":"), "body")]).concat(listLoopBinding(exp.bindings, bindingID, false), listLoop(exp.body, bodyID, false))
+			:
+			[makeEdge(
+				makeNodeRef(father),
+				(isLetExp(exp) ? makeNodeDecl(ID, "LetExp") : makeNodeDecl(ID, "LetrecExp")))].concat(
+					[makeEdge(
+						makeNodeRef(ID),
+						makeNodeDecl(bindingID, ":"), "bindings")],
+					[makeEdge(
+						makeNodeRef(ID),
+						makeNodeDecl(bodyID, ":"), "body")]).concat(listLoopBinding(exp.bindings, bindingID, false), listLoop(exp.body, bodyID, false))
+	) : (
+			[makeEdge(
+				makeNodeRef(father),
+				makeNodeDecl(bindingID, ":"), "bindings"),
+			makeEdge(
+				makeNodeRef(father),
+				makeNodeDecl(bodyID, ":"), "body")].concat(listLoopBinding(exp.bindings, bindingID, false), listLoop(exp.body, bodyID, false))
+		)
 
 const createApp = (exp: AppExp, father: string, ratorID: string, randID: string, ID?: string): Edge[] =>
 	ID ? (
@@ -232,7 +251,7 @@ const createApp = (exp: AppExp, father: string, ratorID: string, randID: string,
 			makeNodeDecl(ratorID, generateNodeDeclLabel(exp.rator)), "rator")].concat(
 				[makeEdge(
 					makeNodeRef(ID),
-					makeNodeDecl(randID, ":"), "rands")]).concat(createExpEdges(exp.rator, ratorID, true)).concat(listLoop(exp.rands, randID, true))
+					makeNodeDecl(randID, ":"), "rands")]).concat(createExpEdges(exp.rator, ratorID, true)).concat(listLoop(exp.rands, randID, false))
 			:
 			[makeEdge(
 				makeNodeRef(father),
@@ -242,35 +261,43 @@ const createApp = (exp: AppExp, father: string, ratorID: string, randID: string,
 				makeNodeDecl(ratorID, generateNodeDeclLabel(exp.rator)), "rator"),
 			makeEdge(
 				makeNodeRef(ID),
-				makeNodeDecl(randID, ":"), "rands")].concat(
-					createExpEdges(exp.rator, ratorID, true)).concat(
-						listLoop(exp.rands, randID, true))
+				makeNodeDecl(randID, ":"), "rands")].concat(createExpEdges(exp.rator, ratorID, true)).concat(listLoop(exp.rands, randID, false))
 	) : (
 			[makeEdge(
 				makeNodeRef(father),
 				makeNodeDecl(ratorID, generateNodeDeclLabel(exp.rator)), "rator"),
 			makeEdge(
 				makeNodeRef(father),
-				makeNodeDecl(randID, ":"), "rands")].concat(createExpEdges(exp.rator, ratorID, true)).concat(listLoop(exp.rands, randID, true))
+				makeNodeDecl(randID, ":"), "rands")].concat(createExpEdges(exp.rator, ratorID, true)).concat(listLoop(exp.rands, randID, false))
 		)
 
-const createProc = (exp: ProcExp, father: string, ID: string, paramsID: string, bodyID: string): Edge[] =>
-	father === "" ? [makeEdge(
-		makeNodeDecl(ID, "ProcExp"),
-		makeNodeDecl(paramsID, ":"), "args")].concat(
+const createProc = (exp: ProcExp, father: string, paramsID: string, bodyID: string, ID?: string): Edge[] =>
+	ID ? (
+		father === "" ? [makeEdge(
+			makeNodeDecl(ID, "ProcExp"),
+			makeNodeDecl(paramsID, ":"), "args")].concat(
+				[makeEdge(
+					makeNodeRef(ID),
+					makeNodeDecl(bodyID, ":"), "body")]).concat(listLoopVarDecl(exp.args, paramsID), listLoop(exp.body, bodyID, false))
+			:
 			[makeEdge(
+				makeNodeRef(father),
+				makeNodeDecl(ID, "ProcExp")),
+			makeEdge(
 				makeNodeRef(ID),
-				makeNodeDecl(bodyID, ":"), "body")])//.concat(listLoopVarDecl(exp.args, paramsID), listLoop(exp.body, bodyID))
-		:
-		[makeEdge(
-			makeNodeRef(father),
-			makeNodeDecl(ID, "ProcExp"))].concat(
-				[makeEdge(
-					makeNodeRef(ID),
-					makeNodeDecl(paramsID, ":"), "args")],
-				[makeEdge(
-					makeNodeRef(ID),
-					makeNodeDecl(bodyID, ":"), "body")])//.concat(listLoopVarDecl(exp.args, paramsID), listLoop(exp.body, bodyID))
+				makeNodeDecl(paramsID, ":"), "args"),
+			makeEdge(
+				makeNodeRef(ID),
+				makeNodeDecl(bodyID, ":"), "body")].concat(listLoopVarDecl(exp.args, paramsID), listLoop(exp.body, bodyID, false))
+	) : (
+			[makeEdge(
+				makeNodeRef(father),
+				makeNodeDecl(paramsID, ":"), "args"),
+			makeEdge(
+				makeNodeRef(father),
+				makeNodeDecl(bodyID, ":"), "body")].concat(listLoopVarDecl(exp.args, paramsID), listLoop(exp.body, bodyID, false))
+		)
+
 
 const varProgram = makeVarGen();
 const varDefine = makeVarGen();
@@ -357,15 +384,15 @@ const unparseGraphContent = (content: GraphContent): string =>
 		map(unparseEdge, content.edges).join(`\n`)
 
 const unparseEdge = (edge: Edge) =>
-	(edge.label == undefined) ? `${unparseNode(edge.from)}-->${unparseNode(edge.to)}` :
-		`${unparseNode(edge.from)}-->|${edge.label}|${unparseNode(edge.to)}`
+	(edge.label) ? `${unparseNode(edge.from)}-->|${edge.label}|${unparseNode(edge.to)}` :
+		`${unparseNode(edge.from)}-->${unparseNode(edge.to)}`
 
 const unparseNode = (node: Node): string =>
 	isNodeDecl(node) ? unparseNodeDecl(node) : unparseNodeRef(node)
 
 const unparseNodeRef = (ref: NodeRef): string => `${ref.id}`
 
-const unparseNodeDecl = (decl: NodeDecl): string => `${decl.id}["${decl.label}"]`
+const unparseNodeDecl = (decl: NodeDecl): string => `${decl.id}[${decl.label}]`
 
 export const L4toMermaid = (concrete: string): Result<string> =>
 	bind(bind(ExpOrProgram(concrete), mapL4toMermaid), unparseMermaid)

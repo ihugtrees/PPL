@@ -1,0 +1,13 @@
+graph TD
+	AppExp_4[AppExp] -->|rator| PrimOp_4["PrimOp(+)"]
+	AppExp_4 -->|rands| Rands_4[:]
+	Rands_4 --> AppExp_5[AppExp]
+	AppExp_5 -->|rator| PrimOp_5["PrimOp(+)"]
+	AppExp_5 -->|rands| Rands_5[:]
+	Rands_5 --> NumExp_7["NumExp(1)"]
+	Rands_5 --> NumExp_8["NumExp(2)"]
+	Rands_4 --> AppExp_6[AppExp]
+	AppExp_6 -->|rator| PrimOp_6["PrimOp(-)"]
+	AppExp_6 -->|rands| Rands_6[:]
+	Rands_6 --> NumExp_9["NumExp(4)"]
+	Rands_6 --> NumExp_10["NumExp(3)"]

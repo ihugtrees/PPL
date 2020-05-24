@@ -1,0 +1,4 @@
+graph TD
+	IfExp_1[IfExp] -->|test| BoolExp_2["BoolExp(#t)"]
+	IfExp_1 -->|then| NumExp_2["NumExp(1)"]
+	IfExp_1 -->|alt| NumExp_3["NumExp(2)"]

@@ -1,0 +1,6 @@
+graph TD
+	AppExp_31[AppExp] -->|rator| PrimOp_22["PrimOp(+)"]
+	AppExp_31 -->|rands| Rands_31[:]
+	Rands_31 --> NumExp_30["NumExp(3)"]
+	Rands_31 --> NumExp_31["NumExp(5)"]
+	Rands_31 --> NumExp_32["NumExp(7)"]
