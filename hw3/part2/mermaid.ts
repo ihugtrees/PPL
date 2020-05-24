@@ -1,7 +1,7 @@
 import { Parsed, isProgram, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, Exp, isAppExp, DefineExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLetrecExp, isLitExp, isSetExp, Program, LitExp, ProcExp, isExp, VarDecl, isBinding, AppExp, IfExp, Binding, LetExp, LetrecExp, SetExp, parseL4, parseL4Exp, AtomicExp } from "./L4-ast";
 import { Result, bind, makeOk, makeFailure, isOk } from "../shared/result";
 import { Graph, GraphContent, makeGraph, makeDir, makeCompoundGraph, makeAtomicGraph, makeNodeDecl, Edge, makeNodeRef, makeEdge, isAtomicGraph, NodeDecl, NodeRef, isNodeDecl, Node } from "./mermaid-ast";
-import { SExpValue, isCompoundSExp, isEmptySExp, isSymbolSExp, CompoundSExp, isClosure } from "./L4-value";
+import { SExpValue, isCompoundSExp, isEmptySExp, isSymbolSExp, CompoundSExp } from "./L4-value";
 import { isEmpty, rest } from "../shared/list";
 import { makeVarGen } from "../L3/substitute";
 import { map } from "ramda";
@@ -322,7 +322,7 @@ const varCompoundExp = makeVarGen();
 const varNumber = makeVarGen();
 const varBoolean = makeVarGen();
 const varString = makeVarGen();
-const varClosure = makeVarGen();
+//const varClosure = makeVarGen();
 const varSymbolSExp = makeVarGen();
 const varEmptySExp = makeVarGen();
 const varCompoundSExp = makeVarGen();
@@ -355,24 +355,24 @@ export const varGenerator = (exp: string): string =>
 																						exp === "Number" ? varNumber("Number") :
 																							exp === "Boolean" ? varBoolean("Boolean") :
 																								exp === "String" ? varString("String") :
-																									exp === "Closure" ? varClosure("Closure") :
-																										exp === "SymbolSExp" ? varSymbolSExp("SymbolSExp") :
-																											exp === "EmptySExp" ? varEmptySExp("EmptySExp") :
-																												exp === "CompoundSExp" ? varCompoundSExp("CompoundSExp") :
-																													exp === "Var" ? varVar("Var") :
-																														exp === "Rands" ? varRands("Rands") :
-																															""
+																									//exp === "Closure" ? varClosure("Closure") :
+																									exp === "SymbolSExp" ? varSymbolSExp("SymbolSExp") :
+																										exp === "EmptySExp" ? varEmptySExp("EmptySExp") :
+																											exp === "CompoundSExp" ? varCompoundSExp("CompoundSExp") :
+																												exp === "Var" ? varVar("Var") :
+																													exp === "Rands" ? varRands("Rands") :
+																														""
 
 export const sexpGenerator = (exp: SExpValue): string =>
 	isSymbolSExp(exp) ? varGenerator("SymbolSExp") :
 		isCompoundSExp(exp) ? varGenerator("CompoundSExp") :
 			isEmptySExp(exp) ? varGenerator("EmptySExp") :
 				isPrimOp(exp) ? varGenerator("PrimOp") :
-					isClosure(exp) ? varGenerator("Closure") :
-						typeof (exp) === 'string' ? varGenerator("String") :
-							typeof (exp) === 'boolean' ? varGenerator("Boolean") :
-								typeof (exp) === 'number' ? varGenerator("Number") :
-									""
+					//isClosure(exp) ? varGenerator("Closure") :
+					typeof (exp) === 'string' ? varGenerator("String") :
+						typeof (exp) === 'boolean' ? varGenerator("Boolean") :
+							typeof (exp) === 'number' ? varGenerator("Number") :
+								""
 
 /************************* Q2.3 *************************/
 
@@ -383,7 +383,7 @@ const unparseGraphContent = (content: GraphContent): string =>
 	isAtomicGraph(content) ? unparseNode(content.nodeDecl) :
 		map(unparseEdge, content.edges).join(`\n`)
 
-const unparseEdge = (edge: Edge) =>
+const unparseEdge = (edge: Edge): string =>
 	(edge.label) ? `${unparseNode(edge.from)}-->|${edge.label}|${unparseNode(edge.to)}` :
 		`${unparseNode(edge.from)}-->${unparseNode(edge.to)}`
 
@@ -395,7 +395,7 @@ const unparseNodeRef = (ref: NodeRef): string => `${ref.id}`
 const unparseNodeDecl = (decl: NodeDecl): string => `${decl.id}[${decl.label}]`
 
 export const L4toMermaid = (concrete: string): Result<string> =>
-	bind(bind(ExpOrProgram(concrete), mapL4toMermaid), unparseMermaid)
+	bind(bind(createParsed(concrete), mapL4toMermaid), unparseMermaid)
 
-const ExpOrProgram = (concrete: string): Result<Parsed> =>
+const createParsed = (concrete: string): Result<Parsed> =>
 	isOk(parseL4(concrete)) ? parseL4(concrete) : bind(p(concrete), parseL4Exp)
