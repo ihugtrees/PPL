@@ -206,8 +206,9 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
                     op === "quote" ? parseLitExp(first(params)) :
                         op === "letrec" ? parseLetrecExp(first(params), rest(params)) :
                             op === "set!" ? parseSetExp(params) :
-                                //op === "let-values" ? parseLetValueExp(first(params), rest(params)) :
-                                makeFailure("Never");
+                                op === "let-values" ? parseLetValueExp(first(params), rest(params)) :
+                                    //op === "let-values" ? parseLetValueExp(first(params), rest(params)) :
+                                    makeFailure("Never");
 
 
 // export const parseValueExp = (tupels: Sexp[]): Result<ValueExp> =>
@@ -294,7 +295,7 @@ const isPrimitiveOp = (x: string): boolean =>
         "number?", "boolean?", "symbol?", "string?", "display", "newline", "values"].includes(x);
 
 const isSpecialForm = (x: string): boolean =>
-    ["if", "lambda", "let", "quote", "letrec", "set!"].includes(x);
+    ["if", "lambda", "let", "quote", "letrec", "set!", "let-values"].includes(x);
 
 const parseAppExp = (op: Sexp, params: Sexp[]): Result<AppExp> =>
     safe2((rator: CExp, rands: CExp[]) => makeOk(makeAppExp(rator, rands)))
