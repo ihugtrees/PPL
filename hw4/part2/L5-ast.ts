@@ -240,8 +240,7 @@ const parseArrayVarDecl = (sexp: Sexp[]): Result<VarDecl[]> =>
     mapResult(parseVarDecl, sexp)
 
 const isBalancedArray = (vds: VarDecl[][], value: AppExp[]): boolean =>
-    vds.length === 0 && value.length === 0 ? true :
-        first(vds).length !== first(value).rands.length ? false : isBalancedArray(rest(vds), rest(value))
+    vds.length === value.length
 
 const parseBindings = (bindings: [Sexp, Sexp][]): Result<Binding[]> =>
     safe2((vds: VarDecl[], vals: CExp[]) => makeOk(zipWith(makeBinding, vds, vals)))
@@ -451,7 +450,7 @@ const unparseLetValueExp = (le: LetValueExp): Result<string> =>
         (unparseValueBindingsArrays(le.bindings), unparseLExps(le.body));
 
 const unparseValueBindingsArrays = (bindings: Binding[][]): Result<string> =>
-    bind(mapResult(bdg => safe2((vd: string, val: string) => makeOk(`(${vd} (values ${val}))`))
+    bind(mapResult(bdg => safe2((vd: string, val: string) => makeOk(`((${vd}) (values ${val}))`))
         (unparseArrayVarDecl(bdg), unparseValues(bdg)), bindings),
         (bdgs: string[]) => makeOk(join(" ", bdgs)));
 
