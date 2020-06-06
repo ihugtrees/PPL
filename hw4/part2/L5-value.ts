@@ -37,11 +37,15 @@ export interface SymbolSExp {
     tag: "SymbolSExp";
     val: string;
 }
+export interface ValuesSExp {
+    tag: "ValuesSExp";
+    val: SExpValue[];
+}
 
-export type SExpValue = number | boolean | string | PrimOp | Closure | SymbolSExp | EmptySExp | CompoundSExp | void;
+export type SExpValue = number | boolean | string | PrimOp | Closure | SymbolSExp | EmptySExp | CompoundSExp | void | ValuesSExp;
 export const isSExp = (x: any): x is SExpValue =>
     typeof(x) === 'string' || typeof(x) === 'boolean' || typeof(x) === 'number' ||
-    isSymbolSExp(x) || isCompoundSExp(x) || isEmptySExp(x) || isPrimOp(x) || isClosure(x);
+    isSymbolSExp(x) || isCompoundSExp(x) || isEmptySExp(x) || isPrimOp(x) || isClosure(x) || isValuesSExp(x);
 
 export const makeCompoundSExp = (val1: SExpValue, val2: SExpValue): CompoundSExp =>
     ({tag: "CompoundSexp", val1: val1, val2 : val2});
@@ -53,6 +57,10 @@ export const isEmptySExp = (x: any): x is EmptySExp => x.tag === "EmptySExp";
 export const makeSymbolSExp = (val: string): SymbolSExp =>
     ({tag: "SymbolSExp", val: val});
 export const isSymbolSExp = (x: any): x is SymbolSExp => x.tag === "SymbolSExp";
+
+export const makeValuesSExp = (val: SExpValue[]): ValuesSExp =>
+    ({tag: "ValuesSExp", val: val});
+export const isValuesSExp = (x: any): x is ValuesSExp => x.tag === "ValuesSExp";
 
 // Printable form for values
 export const closureToString = (c: Closure): string =>

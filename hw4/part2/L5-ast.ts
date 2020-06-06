@@ -67,9 +67,9 @@ export const isAtomicExp = (x: any): x is AtomicExp =>
     isNumExp(x) || isBoolExp(x) || isStrExp(x) ||
     isPrimOp(x) || isVarRef(x);
 
-export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp | ValueExp | LetValueExp;
+export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp | LetValueExp;
 export const isCompoundExp = (x: any): x is CompoundExp =>
-    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x) || isValueExp(x) || isLetValueExp(x);
+    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x) || isLetValueExp(x);
 
 export const expComponents = (e: Exp): CExp[] =>
     isIfExp(e) ? [e.test, e.then, e.alt] :
@@ -79,9 +79,9 @@ export const expComponents = (e: Exp): CExp[] =>
                     isAppExp(e) ? [e.rator, ...e.rands] :
                         isSetExp(e) ? [e.val] :
                             isDefineExp(e) ? [e.val] :
-                                isValueExp(e) ? [...e.tupels] :
-                                    //isLetValueExp(e) ? [ ...e.value.tupels]:
-                                    []; // Atomic expressions have no components
+                                // isValueExp(e) ? [...e.tupels] :
+                                //isLetValueExp(e) ? [ ...e.value.tupels]:
+                                []; // Atomic expressions have no components
 
 
 // Type definitions
@@ -157,10 +157,10 @@ export const makeSetExp = (v: VarRef, val: CExp): SetExp =>
     ({ tag: "SetExp", var: v, val: val });
 export const isSetExp = (x: any): x is SetExp => x.tag === "SetExp";
 
-export interface ValueExp { tag: "ValueExp"; tupels: CExp[]; }
-export const makeValueExp = (tupels: CExp[]): ValueExp =>
-    ({ tag: "ValueExp", tupels: tupels });
-export const isValueExp = (x: any): x is ValueExp => x.tag === "ValueExp";
+// export interface ValueExp { tag: "ValueExp"; tupels: CExp[]; }
+// export const makeValueExp = (tupels: CExp[]): ValueExp =>
+//     ({ tag: "ValueExp", tupels: tupels });
+// export const isValueExp = (x: any): x is ValueExp => x.tag === "ValueExp";
 
 export interface LetValueExp { tag: "LetValueExp"; bindings: Binding[]; body: CExp[]; }
 export const makeLetValueExp = (bindings: Binding[], body: CExp[]): LetValueExp =>
@@ -206,24 +206,23 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
                     op === "quote" ? parseLitExp(first(params)) :
                         op === "letrec" ? parseLetrecExp(first(params), rest(params)) :
                             op === "set!" ? parseSetExp(params) :
-                                op === "values" ? parseValueExp(params) :
-                                    op === "let-values" ? parseLetValueExp(first(params), rest(params)) :
-                                        makeFailure("Never");
+                                //op === "let-values" ? parseLetValueExp(first(params), rest(params)) :
+                                makeFailure("Never");
 
 
-export const parseValueExp = (tupels: Sexp[]): Result<ValueExp> =>
-    isEmpty(tupels) ? makeFailure('tupels cant be empty') :
-        bind(mapResult(parseL5CExp, tupels), (val: CExp[]) => makeOk(makeValueExp(val)));
+// export const parseValueExp = (tupels: Sexp[]): Result<ValueExp> =>
+//     isEmpty(tupels) ? makeFailure('tupels cant be empty') :
+//         bind(mapResult(parseL5CExp, tupels), (val: CExp[]) => makeOk(makeValueExp(val)));
 
-export const parseLetValueExp = (bindings: Sexp, body: Sexp[]): Result<LetValueExp> =>
-    isEmpty(body) ? makeFailure('value cant be empty') :
-        !isGoodBindings(bindings) ? makeFailure(`Invalid bindings: ${JSON.stringify(bindings)}`) :
-            safe2((bdgs: Binding[], body: CExp[]) => makeOk(makeLetValueExp(bdgs, body)))
-                (parseValueBindings(bindings), mapResult(parseL5CExp, body));
+// export const parseLetValueExp = (bindings: Sexp, body: Sexp[]): Result<LetValueExp> =>
+//     isEmpty(body) ? makeFailure('value cant be empty') :
+//         !isGoodBindings(bindings) ? makeFailure(`Invalid bindings: ${JSON.stringify(bindings)}`) :
+//             safe2((bdgs: Binding[], body: CExp[]) => makeOk(makeLetValueExp(bdgs, body)))
+//                 (parseValueBindings(bindings), mapResult(parseL5CExp, body));
 
-const parseValueBindings = (bindings: [Sexp, Sexp][]): Result<Binding[]> =>
-    safe2((vds: VarDecl[], value: ValueExp) => makeOk(zipWith(makeBinding, vds, value.tupels)))
-        (mapResult(parseVarDecl, map(b => b[0], bindings)), parseL5CExp(bindings[1]));
+// const parseValueBindings = (bindings: [Sexp, Sexp][]): Result<Binding[]> =>
+//     safe2((vds: VarDecl[], value: ValueExp) => makeOk(zipWith(makeBinding, vds, value.tupels)))
+//         (mapResult(parseVarDecl, map(b => b[0], bindings)), parseL5CExp(bindings[1]));
 
 const isGoodBindings = (bindings: Sexp): bindings is [Sexp, Sexp][] =>
     isArray(bindings) && allT(isArray, bindings);
@@ -271,7 +270,7 @@ export const parseL5CExp = (sexp: Sexp): Result<CExp> =>
 const isPrimitiveOp = (x: string): boolean =>
     ["+", "-", "*", "/", ">", "<", "=", "not", "eq?",
         "string=?", "cons", "car", "cdr", "pair?", "list?",
-        "number?", "boolean?", "symbol?", "string?", "display", "newline"].includes(x);
+        "number?", "boolean?", "symbol?", "string?", "display", "newline", "values"].includes(x);
 
 const isSpecialForm = (x: string): boolean =>
     ["if", "lambda", "let", "quote", "letrec", "set!"].includes(x);
@@ -381,7 +380,7 @@ export const unparse = (e: Parsed): Result<string> =>
                                         isProcExp(e) ? unparseProcExp(e) :
                                             isLitExp(e) ? makeOk(unparseLitExp(e)) :
                                                 isSetExp(e) ? unparseSetExp(e) :
-                                                    // isValueExp(e) ? unparseValueExp(e) :
+                                                isLetValueExp(e) ? unparseLetValueExp(e) :
                                                     // DefineExp | Program
                                                     isDefineExp(e) ? safe2((vd: string, val: string) => makeOk(`(define ${vd} ${val})`))
                                                         (unparseVarDecl(e.var), unparse(e.val)) :
