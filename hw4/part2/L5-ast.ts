@@ -157,13 +157,13 @@ export const makeSetExp = (v: VarRef, val: CExp): SetExp =>
     ({ tag: "SetExp", var: v, val: val });
 export const isSetExp = (x: any): x is SetExp => x.tag === "SetExp";
 
-// export interface ValueExp { tag: "ValueExp"; tupels: CExp[]; }
-// export const makeValueExp = (tupels: CExp[]): ValueExp =>
-//     ({ tag: "ValueExp", tupels: tupels });
-// export const isValueExp = (x: any): x is ValueExp => x.tag === "ValueExp";
+export interface ValuesBinding { tag: "ValuesBinding"; vars: VarDecl[]; val: CExp; }
+export const makeValuesBinding = (vars: VarDecl[], val: CExp): ValuesBinding =>
+    ({ tag: "ValuesBinding", vars: vars, val: val });
+export const isValuesBinding = (x: any): x is ValuesBinding => x.tag === "ValuesBinding";
 
-export interface LetValueExp { tag: "LetValueExp"; bindings: Binding[][]; body: CExp[]; }
-export const makeLetValueExp = (bindings: Binding[][], body: CExp[]): LetValueExp =>
+export interface LetValueExp { tag: "LetValueExp"; bindings: ValuesBinding[]; body: CExp[]; }
+export const makeLetValueExp = (bindings: ValuesBinding[], body: CExp[]): LetValueExp =>
     ({ tag: "LetValueExp", bindings: bindings, body: body });
 export const isLetValueExp = (x: any): x is LetValueExp => x.tag === "LetValueExp";
 
@@ -207,47 +207,27 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
                         op === "letrec" ? parseLetrecExp(first(params), rest(params)) :
                             op === "set!" ? parseSetExp(params) :
                                 op === "let-values" ? parseLetValueExp(first(params), rest(params)) :
-                                    //op === "let-values" ? parseLetValueExp(first(params), rest(params)) :
                                     makeFailure("Never");
-
-
-// export const parseValueExp = (tupels: Sexp[]): Result<ValueExp> =>
-//     isEmpty(tupels) ? makeFailure('tupels cant be empty') :
-//         bind(mapResult(parseL5CExp, tupels), (val: CExp[]) => makeOk(makeValueExp(val)));
 
 export const parseLetValueExp = (bindings: Sexp, body: Sexp[]): Result<LetValueExp> =>
     isEmpty(body) ? makeFailure('body cant be empty') :
         !isGoodValueBindings(bindings) ? makeFailure(`Invalid bindings: ${JSON.stringify(bindings)}`) :
-            safe2((bdgs: Binding[][], body: CExp[]) => makeOk(makeLetValueExp(bdgs, body)))
+            safe2((bdgs: ValuesBinding[], body: CExp[]) => makeOk(makeLetValueExp(bdgs, body)))
                 (parseLetValueBindings(bindings), mapResult(parseL5CExp, body));
 
-const parseLetValueBindings = (bindings: [Sexp[], Sexp][]): Result<Binding[][]> =>
-    safe2((vds: VarDecl[][], value: CExp[]) => makeResultBindings(vds, value))
+const parseLetValueBindings = (bindings: [Sexp[], Sexp][]): Result<ValuesBinding[]> =>
+    safe2((vds: VarDecl[][], value: CExp[]) => makeOk(zipWith(makeValuesBinding, vds, value)))
         (mapResult(parseArrayVarDecl, map(b => b[0], bindings)), mapResult(parseL5CExp, map(b => b[1], bindings)))
-
-const makeResultBindings = (vds: VarDecl[][], value: CExp[]): Result<Binding[][]> =>
-    allT(isAppExp, value) && isBalancedArray(vds, value) ? makeOk(zipValueBindings(vds, value)) :
-        makeFailure("all cexp must be AppExps")
-
-const zipValueBindings = (vds: VarDecl[][], value: AppExp[]): Binding[][] =>
-    vds.length === 0 && value.length === 0 ? [] :
-        [zipSingleValueBindings(first(vds), first(value))].concat(zipValueBindings(rest(vds), rest(value)))
-
-const zipSingleValueBindings = (vds: VarDecl[], value: AppExp): Binding[] =>
-    zipWith(makeBinding, vds, value.rands)
 
 const parseArrayVarDecl = (sexp: Sexp[]): Result<VarDecl[]> =>
     mapResult(parseVarDecl, sexp)
-
-const isBalancedArray = (vds: VarDecl[][], value: AppExp[]): boolean =>
-    vds.length === value.length
 
 const parseBindings = (bindings: [Sexp, Sexp][]): Result<Binding[]> =>
     safe2((vds: VarDecl[], vals: CExp[]) => makeOk(zipWith(makeBinding, vds, vals)))
         (mapResult(parseVarDecl, map(b => b[0], bindings)), mapResult(parseL5CExp, map(b => b[1], bindings)));
 
 const isGoodValueBindings = (bindings: Sexp): bindings is [Sexp[], Sexp][] =>
-    isArray(bindings) && allT(isArray, bindings) && allT(isArray, bindings[0])
+    isArray(bindings) && allT(isArray, bindings) && allT(isArray, map(first, bindings))
 
 const isGoodBindings = (bindings: Sexp): bindings is [Sexp, Sexp][] =>
     isArray(bindings) && allT(isArray, bindings);
@@ -449,21 +429,11 @@ const unparseLetValueExp = (le: LetValueExp): Result<string> =>
     safe2((bdgs: string, body: string) => makeOk(`(let-values (${bdgs}) ${body})`))
         (unparseValueBindingsArrays(le.bindings), unparseLExps(le.body));
 
-const unparseValueBindingsArrays = (bindings: Binding[][]): Result<string> =>
-    bind(mapResult(bdg => safe2((vd: string, val: string) => makeOk(`((${vd}) (values ${val}))`))
-        (unparseArrayVarDecl(bdg), unparseValues(bdg)), bindings),
+const unparseValueBindingsArrays = (bindings: ValuesBinding[]): Result<string> =>
+    bind(mapResult(bdg => safe2((vd: string, val: string) => makeOk(`((${vd}) ${val})`))
+        (unparseArrayVarDecl(bdg.vars), unparse(bdg.val)), bindings),
         (bdgs: string[]) => makeOk(join(" ", bdgs)));
 
-const unparseArrayVarDecl = (binding: Binding[]): Result<string> =>
-    bind(mapResult(unparseBindingVarDecl, binding),
+const unparseArrayVarDecl = (vars: VarDecl[]): Result<string> =>
+    bind(mapResult(unparseVarDecl, vars),
         (bdgs: string[]) => makeOk(join(" ", bdgs)));
-
-const unparseBindingVarDecl = (binding: Binding): Result<string> =>
-    unparseVarDecl(binding.var)
-
-const unparseValues = (bdg: Binding[]): Result<string> =>
-    bind(mapResult(unparseBindingValue, bdg),
-        (bdgs: string[]) => makeOk(join(" ", bdgs)));
-
-const unparseBindingValue = (binding: Binding): Result<string> =>
-    unparse(binding.val)
