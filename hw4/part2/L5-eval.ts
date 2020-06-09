@@ -11,7 +11,7 @@ import { applyEnv, applyEnvBdg, globalEnvAddBinding, makeExtEnv, setFBinding,
          theGlobalEnv, Env, FBinding } from "./L5-env";
 import { isClosure, makeClosure, Closure, Value, isTuple, Tuple, SExpValue } from "./L5-value";
 import { isEmpty, first, rest, allT } from '../shared/list';
-import { Result, makeOk, makeFailure, mapResult, safe2, bind, isFailure } from "../shared/result";
+import { Result, makeOk, makeFailure, mapResult, safe2, bind, isFailure, safe3 } from "../shared/result";
 import { parse as p } from "../shared/parser";
 import { applyPrimitive } from "./evalPrimitive";
 
@@ -44,12 +44,20 @@ const evalLetValues = (exp : LetValueExp, env:Env) : Result<Value> => {
     const evaluatedValues = mapResult( (binding: ValuesBinding)=>
         applicativeEval(binding.val, env) , exp.bindings)  //each element should be a tuple
     const tuples = bind(evaluatedValues, makeTuples)
-    const newEnv = makeExtEnv(combine(vars), combineVal(tuples), env);
+
+
+
+
+    safe2( )
+    // (combineVar(exp.bindings), combineVal(tuples), env);
     evalSequence(exp.body, newEnv)
     return makeFailure('shit')
 }
 // safe2((vars : VarDecl[][] ,val : Tuple[]) => 
 // evalSequence(exp.body, makeExtEnv(combine(vars), combineVal(val), env))
+
+const combineVar = (vars:ValuesBinding[]): string[] =>
+    ['shit']
 
 // make one long array
 const combineVal = (values:Result<Tuple[]>): Result<SExpValue[]> =>
