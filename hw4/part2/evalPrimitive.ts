@@ -1,5 +1,5 @@
 import { PrimOp } from "./L5-ast";
-import { Value, isSymbolSExp, isCompoundSExp, makeCompoundSExp, makeEmptySExp, isEmptySExp, CompoundSExp, EmptySExp, makeValuesSExp, ValuesSExp } from "./L5-value";
+import { Value, isSymbolSExp, isCompoundSExp, makeCompoundSExp, makeEmptySExp, isEmptySExp, CompoundSExp, EmptySExp, makeTuple, Tuple } from "./L5-value";
 import { Result, makeFailure, makeOk } from "../shared/result";
 import { allT, first, rest } from "../shared/list";
 import { isNumber, isString, isBoolean } from "../shared/type-predicates";
@@ -33,8 +33,8 @@ export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
 const consPrim = (v1: Value, v2: Value): CompoundSExp =>
     makeCompoundSExp(v1, v2);
 
-const valuesPrim = (v1: Value[]): ValuesSExp =>
-    makeValuesSExp(v1);
+const valuesPrim = (v1: Value[]): Tuple =>
+    makeTuple(v1);
 
 const minusPrim = (args: Value[]): Result<number> => {
     // TODO complete

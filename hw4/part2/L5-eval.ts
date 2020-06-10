@@ -1,7 +1,7 @@
 // L5-eval-box
 
 import { map, repeat, zipWith } from "ramda";
-import { CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp, isCExp } from './L5-ast';
+import { CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp, isCExp, isLetValueExp, LetValueExp, ValuesBinding } from './L5-ast';
 import { Binding, VarDecl } from "./L5-ast";
 import { isBoolExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef } from "./L5-ast";
 import { parseL5Exp } from "./L5-ast";
@@ -9,9 +9,9 @@ import { isAppExp, isDefineExp, isIfExp, isLetrecExp, isLetExp,
          isProcExp, isSetExp } from "./L5-ast";
 import { applyEnv, applyEnvBdg, globalEnvAddBinding, makeExtEnv, setFBinding,
          theGlobalEnv, Env, FBinding } from "./L5-env";
-import { isClosure, makeClosure, Closure, Value } from "./L5-value";
-import { isEmpty, first, rest } from '../shared/list';
-import { Result, makeOk, makeFailure, mapResult, safe2, bind } from "../shared/result";
+import { isClosure, makeClosure, Closure, Value, isTuple, Tuple, SExpValue } from "./L5-value";
+import { isEmpty, first, rest, allT } from '../shared/list';
+import { Result, makeOk, makeFailure, mapResult, safe2, bind, isFailure, safe3 } from "../shared/result";
 import { parse as p } from "../shared/parser";
 import { applyPrimitive } from "./evalPrimitive";
 
@@ -28,11 +28,44 @@ export const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
     isIfExp(exp) ? evalIf(exp, env) :
     isProcExp(exp) ? evalProc(exp, env) :
     isLetExp(exp) ? evalLet(exp, env) :
+    isLetValueExp(exp) ? evalLetValues(exp , env) :     //added
     isLetrecExp(exp) ? evalLetrec(exp, env) :
     isSetExp(exp) ? evalSet(exp, env) :
     isAppExp(exp) ? safe2((proc: Value, args: Value[]) => applyProcedure(proc, args))
                         (applicativeEval(exp.rator, env), mapResult(rand => applicativeEval(rand, env), exp.rands)) :
     makeFailure(`Bad L5 AST ${exp}`);
+
+    // export interface LetValueExp { tag: "LetValueExp"; bindings: ValuesBinding[]; body: CExp[]; }
+// export interface ValuesBinding { tag: "ValuesBinding"; vars: VarDecl[]; val: CExp; }
+// interface tupel :  val: SExpValue[];
+
+
+const evalLetValues = (exp : LetValueExp, env:Env) : Result<Value> => {
+    const evaluatedValues = mapResult( (binding: ValuesBinding)=>
+        applicativeEval(binding.val, env) , exp.bindings)  //each element should be a tuple
+    const tuples = bind(evaluatedValues, makeTuples)
+
+
+
+
+    safe2( )
+    // (combineVar(exp.bindings), combineVal(tuples), env);
+    evalSequence(exp.body, newEnv)
+    return makeFailure('shit')
+}
+// safe2((vars : VarDecl[][] ,val : Tuple[]) => 
+// evalSequence(exp.body, makeExtEnv(combine(vars), combineVal(val), env))
+
+const combineVar = (vars:ValuesBinding[]): string[] =>
+    ['shit']
+
+// make one long array
+const combineVal = (values:Result<Tuple[]>): Result<SExpValue[]> =>
+    makeFailure('shit')
+
+
+const makeTuples = (values:SExpValue[]): Result<Tuple[]> =>
+    allT(isTuple, values) ? makeOk(values) : makeFailure('expected values in let values ${JSON.stringify(v)}')
 
 export const isTrueValue = (x: Value): boolean =>
     ! (x === false);

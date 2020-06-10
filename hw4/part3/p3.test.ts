@@ -24,6 +24,7 @@ describe('generators q1', () => {
         expect(gen.next()).to.deep.equal({ value: 12, done: false });
         expect(gen.next()).to.deep.equal({ done: true, value: undefined });
     });
+
     it('the 2nd is longer', () => {
         const g1 = range(0, 5);
         const g2 = range(5, 13);

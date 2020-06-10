@@ -31,7 +31,7 @@
 */
 import { chain, concat, map, uniq } from "ramda";
 import { Sexp } from "s-expression";
-import { isEmpty } from "../shared/list";
+import { isEmpty, allT } from "../shared/list";
 import { isArray, isBoolean, isString } from '../shared/type-predicates';
 import { makeBox, setBox, unbox, Box } from '../shared/box';
 import { first, rest } from '../shared/list';
@@ -162,15 +162,22 @@ export const parseTExp = (texp: Sexp): Result<TExp> =>
 ;; expected exactly one -> in the list
 ;; We do not accept (a -> b -> c) - must parenthesize
 */
-const parseCompoundTExp = (texps: Sexp[]): Result<ProcTExp> => {
+const parseCompoundTExp = (texps: Sexp[]): Result<ProcTExp | TupleTExp> => {
     const pos = texps.indexOf('->');
-    return (pos === -1) ? makeFailure(`Procedure type expression without -> - ${texps}`) :
+    return (pos === -1) ? parseTupleTExpNonProc(texps) :
         (pos === 0) ? makeFailure(`No param types in proc texp - ${texps}`) :
             (pos === texps.length - 1) ? makeFailure(`No return type in proc texp - ${texps}`) :
                 (texps.slice(pos + 1).indexOf('->') > -1) ? makeFailure(`Only one -> allowed in a procexp - ${texps}`) :
                     safe2((args: TExp[], returnTE: TExp) => makeOk(makeProcTExp(args, returnTE)))
                         (parseTupleTExp(texps.slice(0, pos)), parseTExp(texps[pos + 1]));
 };
+
+const parseTupleTExpNonProc = (texps: Sexp[]): Result<TupleTExp> =>
+    bind( parseTupleTExp(texps) ,
+            (texps : TExp[]) => isEmpty(texps) ? makeOk(makeEmptyTupleTExp()) :
+            allT(isNonTupleTExp, texps) ? makeOk(makeNonEmptyTupleTExp(texps)) :
+            makeFailure('Nested tuple expression is not except ${texps}')
+
 
 /*
 ;; Expected structure: <te1> [* <te2
