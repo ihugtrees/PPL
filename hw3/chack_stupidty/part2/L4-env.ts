@@ -25,7 +25,7 @@ export interface EmptyEnv {tag: "EmptyEnv" }
 export interface ExtEnv {
     tag: "ExtEnv";
     vars: string[];
-    vals: (CExp | myPair) [];
+    vals: Value[];
     nextEnv: Env;
 }
 export interface RecEnv {
@@ -36,22 +36,12 @@ export interface RecEnv {
     nextEnv: Env;
 }
 
-export interface myPair {
-    tag: "pair";
-    cexp: CExp;
-    env: Env;
-}
-
-
 export const makeEmptyEnv = (): EmptyEnv => ({tag: "EmptyEnv"});
-export const makeExtEnv = (vs: string[], vals: (CExp | myPair)[], env: Env): ExtEnv =>
+export const makeExtEnv = (vs: string[], vals: Value[], env: Env): ExtEnv =>
     ({tag: "ExtEnv", vars: vs, vals: vals, nextEnv: env});
 export const makeRecEnv = (vs: string[], paramss: VarDecl[][], bodiess: CExp[][], env: Env): RecEnv =>
     ({tag: "RecEnv", vars: vs, paramss: paramss, bodiess: bodiess, nextEnv: env});
-export const makeMyPair = (cexp1: CExp, env1: Env) : myPair =>
-    ({tag: "pair", cexp: cexp1, env: env1});
 
-export const isPair = (x: any): x is myPair => x.tag === "pair";
 const isEmptyEnv = (x: any): x is EmptyEnv => x.tag === "EmptyEnv";
 const isExtEnv = (x: any): x is ExtEnv => x.tag === "ExtEnv";
 const isRecEnv = (x: any): x is RecEnv => x.tag === "RecEnv";
@@ -59,19 +49,17 @@ const isRecEnv = (x: any): x is RecEnv => x.tag === "RecEnv";
 export const isEnv = (x: any): x is Env => isEmptyEnv(x) || isExtEnv(x) || isRecEnv(x);
 
 // Apply-env
-export const applyEnv = (env: Env, v: string): Result<CExp|myPair> =>
+export const applyEnv = (env: Env, v: string): Result<Value> =>
     isEmptyEnv(env) ? makeFailure(`var not found ${v}`) :
     isExtEnv(env) ? applyExtEnv(env, v) :
-    makeFailure("give me ext env please");
-    // applyRecEnv(env, v);
+    applyRecEnv(env, v);
 
-export const applyExtEnv = (env: ExtEnv, v: string): Result<CExp|myPair> =>
+const applyExtEnv = (env: ExtEnv, v: string): Result<Value> =>
     env.vars.includes(v) ? makeOk(env.vals[env.vars.indexOf(v)]) :
     applyEnv(env.nextEnv, v);
- 
 
-    
-export const applyRecEnv = (env: RecEnv, v: string): Result<CExp> =>
-    makeFailure("this works with ext envs perfectly test that!");
-// env.vars.includes(v) ? makeOk(env.bodiess[env.vars.indexOf(v)]) :
-// applyEnv(env.nextEnv, v);
+const applyRecEnv = (env: RecEnv, v: string): Result<Value> =>
+    env.vars.includes(v) ? makeOk(makeClosure(env.paramss[env.vars.indexOf(v)],
+                                              env.bodiess[env.vars.indexOf(v)],
+                                              env)) :
+    applyEnv(env.nextEnv, v);

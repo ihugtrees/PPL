@@ -137,4 +137,32 @@ describe('L4 Normal Eval', () => {
                 (define g (lambda (x) 5))
                 (g (f 0)))`), evalNormalProgram)).to.deep.equal(makeOk(5));
     });
+
+    it('this will give a deffrent result with display', () => {
+        expect(bind(parseL4(`
+            (L4 (define f (lambda (x) (display x) (newline) (+ x 1)))
+                (define g (lambda (x) 5))
+                (g (f 0)))`), evalNormalProgram)).to.deep.equal(makeOk(5));
+    });
+    
+    it('this will give a deffrent result because of side effects!', () => {
+        expect(bind(parseL4(`
+            (L4 (define f (lambda (x) (display x) (newline) (+ 0 x)))
+                (define g (lambda (x) 3))
+                (g (f 0)))`), evalNormalProgram)).to.deep.equal(makeOk(3));
+    });
+
+    it('this will give a deffrent result because / 0 will not happen', () => {
+        expect(bind(parseL4(`
+            (L4 (define f (lambda (x y) (+ x 1)))
+            (f 4 (/ 3 0)))`), evalNormalProgram)).to.deep.equal(makeOk(5));
+    });
+
+    it('this will give a deffrent result because (+ 3 #t) will not be evaluated in lazy eval ', () => {
+        expect(bind(parseL4(`
+            (L4 (define f (lambda (x y) (+ x 1)))
+            (f 4 (+ 3 #t)))`), evalNormalProgram)).to.deep.equal(makeOk(5));
+    });
+
+    
 });
