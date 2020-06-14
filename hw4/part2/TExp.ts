@@ -176,7 +176,7 @@ const parseTupleTExpNonProc = (texps: Sexp[]): Result<TupleTExp> =>
     bind( parseTupleTExp(texps) ,
             (texps : TExp[]) => isEmpty(texps) ? makeOk(makeEmptyTupleTExp()) :
             allT(isNonTupleTExp, texps) ? makeOk(makeNonEmptyTupleTExp(texps)) :
-            makeFailure('Nested tuple expression is not except ${texps}')
+            makeFailure('Nested tuple expression is not except ${texps}'))
 
 
 /*

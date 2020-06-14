@@ -71,6 +71,7 @@ export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp
 export const isCompoundExp = (x: any): x is CompoundExp =>
     isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x) || isLetValueExp(x);
 
+    //TODO
 export const expComponents = (e: Exp): CExp[] =>
     isIfExp(e) ? [e.test, e.then, e.alt] :
         isProcExp(e) ? e.body :
