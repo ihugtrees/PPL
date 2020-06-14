@@ -1,7 +1,7 @@
 // L5-eval-box
 
 import { map, repeat, zipWith, chain, match } from "ramda";
-import { CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp, isCExp, isLetValueExp, LetValueExp, ValuesBinding, isVarDecl } from './L5-ast';
+import { CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp, isCExp, isLetValuesExp, LetValuesExp, ValuesBinding, isVarDecl } from './L5-ast';
 import { Binding, VarDecl } from "./L5-ast";
 import { isBoolExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef } from "./L5-ast";
 import { parseL5Exp } from "./L5-ast";
@@ -32,7 +32,7 @@ export const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
                             isIfExp(exp) ? evalIf(exp, env) :
                                 isProcExp(exp) ? evalProc(exp, env) :
                                     isLetExp(exp) ? evalLet(exp, env) :
-                                        isLetValueExp(exp) ? evalLetValues(exp, env) :     //added
+                                        isLetValuesExp(exp) ? evalLetValues(exp, env) :     //added
                                             isLetrecExp(exp) ? evalLetrec(exp, env) :
                                                 isSetExp(exp) ? evalSet(exp, env) :
                                                     isAppExp(exp) ? safe2((proc: Value, args: Value[]) => applyProcedure(proc, args))
@@ -44,7 +44,7 @@ export const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
 // interface tupel :  val: SExpValue[];
 
 
-const evalLetValues = (exp: LetValueExp, env: Env): Result<Value> =>
+const evalLetValues = (exp: LetValuesExp, env: Env): Result<Value> =>
     safe2((vars: VarDecl[][], vals: Tuple[]): Result<Value> =>
         bind(balancedArrays2(vars, vals), bool =>
             evalSequence(exp.body, makeExtEnv(combineVar(vars), combineVal(vals), env))))
@@ -56,7 +56,7 @@ const tuples = (bnd: ValuesBinding[], env: Env): Result<Tuple[]> =>
         applicativeEval(binding.val, env), bnd), makeTuples)
 
 const balancedArrays2 = (vars: VarDecl[][], vals: Tuple[]): Result<boolean> =>
-    vars.length != vals.length  ? makeFailure('let values had defrent sizes!!!') :
+    vars.length != vals.length ? makeFailure('let values had defrent sizes!!!') :
         balancedArrays(vars, vals)
 
 

@@ -176,7 +176,7 @@ const parseTupleTExpNonProc = (texps: Sexp[]): Result<TupleTExp> =>
     bind( parseTupleTExp(texps) ,
             (texps : TExp[]) => isEmpty(texps) ? makeOk(makeEmptyTupleTExp()) :
             allT(isNonTupleTExp, texps) ? makeOk(makeNonEmptyTupleTExp(texps)) :
-            makeFailure('Nested tuple expression is not except ${texps}')
+            makeFailure('Nested tuple expression is not except ${texps}'))
 
 
 /*
@@ -215,6 +215,8 @@ export const unparseTExp = (te: TExp): Result<string> => {
                     isVoidTExp(x) ? makeOk('void') :
                         isEmptyTVar(x) ? makeOk(x.var) :
                             isTVar(x) ? up(tvarContents(x)) :
+                            isEmptyTupleTExp(x) ? makeOk(["Empty"]) :
+                                isNonEmptyTupleTExp(x) ? unparseTuple(x.TEs) :
                                 isProcTExp(x) ? safe2((paramTEs: string[], returnTE: string) => makeOk([...paramTEs, '->', returnTE]))
                                     (unparseTuple(x.paramTEs), unparseTExp(x.returnTE)) :
                                     makeFailure("Never");
