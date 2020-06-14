@@ -16,7 +16,7 @@ describe('L5 Parser', () => {
         expect(p(">")).to.satisfy(isOkT(isPrimOp));
         expect(p("=")).to.satisfy(isOkT(isPrimOp));
         expect(p("string=?")).to.satisfy(isOkT(isPrimOp));
-       // expect(p("values")).to.satisfy(isOkT(isPrimOp));
+        expect(p("values")).to.satisfy(isOkT(isPrimOp));
         expect(p("eq?")).to.satisfy(isOkT(isPrimOp));
         expect(p("cons")).to.satisfy(isOkT(isPrimOp));
     });

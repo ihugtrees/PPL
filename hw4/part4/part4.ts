@@ -1,7 +1,7 @@
 
 export const f = (x: number): Promise<number> =>
     new Promise<number>((resolve, reject) =>
-        x === 0 ? reject("error") : resolve(1 / x)
+        x === 0 ? reject('error') : resolve(1 / x)
     )
 
 
