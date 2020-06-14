@@ -69,7 +69,7 @@ export const isAtomicExp = (x: any): x is AtomicExp =>
 
 export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp | LetValueExp;
 export const isCompoundExp = (x: any): x is CompoundExp =>
-    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x) || isLetValueExp(x);
+    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x) || isLetValuesExp(x);
 
 export const expComponents = (e: Exp): CExp[] =>
     isIfExp(e) ? [e.test, e.then, e.alt] :
@@ -165,7 +165,7 @@ export const isValuesBinding = (x: any): x is ValuesBinding => x.tag === "Values
 export interface LetValueExp { tag: "LetValueExp"; bindings: ValuesBinding[]; body: CExp[]; }
 export const makeLetValueExp = (bindings: ValuesBinding[], body: CExp[]): LetValueExp =>
     ({ tag: "LetValueExp", bindings: bindings, body: body });
-export const isLetValueExp = (x: any): x is LetValueExp => x.tag === "LetValueExp";
+export const isLetValuesExp = (x: any): x is LetValueExp => x.tag === "LetValueExp";
 
 // ========================================================
 // Parsing
@@ -381,7 +381,7 @@ export const unparse = (e: Parsed): Result<string> =>
                                         isProcExp(e) ? unparseProcExp(e) :
                                             isLitExp(e) ? makeOk(unparseLitExp(e)) :
                                                 isSetExp(e) ? unparseSetExp(e) :
-                                                    isLetValueExp(e) ? unparseLetValueExp(e) :
+                                                    isLetValuesExp(e) ? unparseLetValueExp(e) :
                                                         // DefineExp | Program
                                                         isDefineExp(e) ? safe2((vd: string, val: string) => makeOk(`(define ${vd} ${val})`))
                                                             (unparseVarDecl(e.var), unparse(e.val)) :
